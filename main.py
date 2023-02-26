@@ -11,6 +11,7 @@ import sqlite3
 import http.client
 
 
+'''
 
 class FakeClientThread(threading.Thread):
     def run(self):
@@ -21,6 +22,7 @@ class FakeClientThread(threading.Thread):
         client_connection_response = client_connection.getresponse()
         client_connection.close()
         print(client_connection_response.msg)
+'''
 
 
 class ParsingHandler(http.server.BaseHTTPRequestHandler):
@@ -43,22 +45,8 @@ SERVER_PORT_NUMBER  = 80
 
 # handler for the program.
 def main():
-
-
-    # database_connection = sqlite3.connect("databasefilename.db")
-    # database_cursor     = database_connection.cursor()
-
-    # This should be vetted to make sure it's a normal request (or obfuscated otherwise), connect has an arguement for controlling the 
-    # authorization level of a connection, which could prove useful. 
-
-    # database_result = database_cursor.execute("requesttexthere"); # this also can INSERT text into the database. 
-    # database_result.commit() # commits database changes to the opened database. 
-    # database_result.fetchone() # fetches a single entry from the returned request. 
-    # databsae_result.fetchall() fetches ALL entries from a result.
-    # database_result.fetchone() is None (check for invalid or otherwise empty requests)
-    # each database_connection should be closed(), meaning this ideally is done in a wrapper function
-
-    myServerSocketRequest = ParsingHandler
+    
+    
     # what the structure for incoming requests looks like. 
     # this class has a controller for when a connection is to be closed, close_connection. 
     # this class has storage for components of the request, including:
@@ -70,10 +58,9 @@ def main():
     # wfile (output stream to write a response to the client)  (called using send_response() and send_header())
 
     # what the constructor for the server's http request socket looks like
+    myServerSocketRequest = ParsingHandler
     with http.server.ThreadingHTTPServer((SERVER_PORT_ADDRESS, SERVER_PORT_NUMBER), myServerSocketRequest) as myServerSocket:
         print("serving PORT " + str(SERVER_PORT_NUMBER) + ":\n")
-        myThread = FakeClientThread()
-        myThread.start()
         myServerSocket.serve_forever()
     # ideally we never get here. Though the server crashes if interrupted, so it might be better to have a loop control/control for threads.
     return 0
