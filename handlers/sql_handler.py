@@ -1,14 +1,13 @@
 '''
-References: https://docs.python.org/3/library/sqlite3.html
-For reading SQL in Visual Studio Code: Use the SQLite extension. 
+    Basic wrapper functions for the sqlite3 library included with python 3. 
+    References: https://docs.python.org/3/library/sqlite3.html
+    For reading SQL in Visual Studio Code: Use the SQLite extension. 
 '''
+
 import sqlite3
-
-
 
 def sql_execute_command(database, command, shouldCommit=True, shouldResolve=False):
     value = False
-    
     # establish a connection and execute the command
     # safety check should go here in the future
     sql_connection = sqlite3.connect(database)
@@ -28,6 +27,7 @@ def sql_execute_command(database, command, shouldCommit=True, shouldResolve=Fals
     else:
         value = resolve.fetchall()
     return value
+
 
 
 # Subfunctions with plain english names that invoke sql_execute_command()
