@@ -2,6 +2,7 @@
     Basic wrapper functions for the sqlite3 library included with python 3. 
     References: https://docs.python.org/3/library/sqlite3.html
     For reading SQL in Visual Studio Code: Use the SQLite extension. 
+    For editing SQL in a traditional editor: https://sqlitebrowser.org/dl/
 '''
 
 import sqlite3
