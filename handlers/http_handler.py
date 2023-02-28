@@ -1,10 +1,11 @@
 '''
     Basic wrapper functions for serving http requests (and infering data from them).
+    List of HTTP Responses: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#server_error_responses
 '''
 
 import http.server
 import handlers.json_handler as json_h
-
+import handlers.sql_handler  as sql_h
 
 
 
@@ -17,10 +18,7 @@ def do_GET_from_url(url, port=80):
     return client_connection_response
 
 
-# converts an http request object into a string (could probably write to an intermediate file instead for less ram usage)
-def http_to_string(target):
-    post_length = int(target.headers['Content-length'])
-    return target.rfile.read(post_length)
+
 
 
 
@@ -39,17 +37,41 @@ def http_to_string(target):
 class ParsingHandler(http.server.BaseHTTPRequestHandler):
     # handles POST requests from clients. 
     # this doesn't seem to need to return anything, but ideally should be coupled with an object that's tied to main/the server. 
-    def do_POST(self):
 
-        # example from http read code
-        data = json_h.json_load_string(http_to_string(self))
 
-        data
+    # converts an http request object into a string (could probably write to an intermediate file instead for less ram usage)
+    def http_body_to_string(self):
+        post_length = int(self.headers['Content-length'])
+        return self.rfile.read(post_length)
 
-        # example write code to send back to the client (ideally is json/other relevant information)
-        self.wfile.write("serverside data")
 
-        # send response to client
-        self.send_response(200, "OK")
+    def do_POST_send_response(self, code, message, data):
+        self.send_response(code, message)
+        self.wfile.write(data)
         self.end_headers()
 
+
+    def do_POST(self):
+        code    = 200
+        message = "OK"
+        data    = "{'INFO':200}"
+
+
+        # example from http read code
+        client_data = json_h.json_load_string(self.http_body_to_string())
+
+        # test query for correct username and password. 
+        query_results = sql_h.sql_execute_search("SELECT password FROM USERS WHERE NAME IS " + client_data["USERNAME"] + " AND PASSWORD IS " + client_data["PASSWORD"])
+        
+        # response if the query returned anything
+        if(not(query_results)):
+            code    = 400
+            message = "Bad Request"
+
+        # construct the server's response to the client. 
+        self.do_POST_send_response(code, message, data)
+
+
+
+
+        
