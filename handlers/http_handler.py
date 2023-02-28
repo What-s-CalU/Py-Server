@@ -61,7 +61,12 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
         client_data = json_h.json_load_string(self.http_body_to_string())
 
         # test query for correct username and password. 
-        query_results = sql_h.sql_execute_search("SELECT password FROM USERS WHERE NAME IS " + client_data["USERNAME"] + " AND PASSWORD IS " + client_data["PASSWORD"])
+        query_results = sql_h.sql_execute_search
+        (
+            "SELECT ID,NAME,PASSWORD " +
+            "FROM USERS " +
+            "WHERE NAME IS " + client_data['name'] + "AND PASS IS "+client_data['password']
+        )
         
         # response if the query returned anything
         if(not(query_results)):
