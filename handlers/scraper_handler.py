@@ -12,6 +12,6 @@ import http
 # webscraper's tasks as a thread (which can be ran/released periodically via main)
 class CALUWebScraperThread(threading.Thread):
     def run(self):
-        url = 'localhost'
+        url: str = "localhost"
         response = http_h.do_GET_from_url(url)
         print(response.msg)

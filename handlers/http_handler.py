@@ -10,8 +10,8 @@ import handlers.sql_handler  as sql_h
 
 
 # returns a GET http response from a website. 
-def do_GET_from_url(url, port=80):
-    client_connection = http.client.HTTPSConnection(host=url, port=port)
+def do_GET_from_url(url:str, port:int=80):
+    client_connection: http.client.HTTPSConnection = http.client.HTTPSConnection(host=url, port=port)
     client_connection.request("GET", url)
     client_connection_response = client_connection.getresponse()
     client_connection.close()
@@ -35,41 +35,44 @@ def do_GET_from_url(url, port=80):
 # wfile (output stream to write a response to the client)  (called using send_response() and send_header())
 
 class ParsingHandler(http.server.BaseHTTPRequestHandler):
-    # handles POST requests from clients. 
-    # this doesn't seem to need to return anything, but ideally should be coupled with an object that's tied to main/the server. 
-
 
     # converts an http request object into a string (could probably write to an intermediate file instead for less ram usage)
     def http_body_to_string(self):
-        post_length = int(self.headers['Content-length'])
+        post_length: int = int(self.headers['Content-length'])
         return self.rfile.read(post_length)
 
-
-    def do_POST_send_response(self, code, message, data):
+    # Sends a templated http response constructed in do_POST().
+    def do_POST_send_response(self, code: int, message: str, data: str):
         self.send_response(code, message)
-        self.wfile.write(data)
+
+        # manually converts our data into a blob of bytes for wfile.write(). 
+        # *This method cannot accept a normal string that isn't a literal, for whatever reason. 
+        self.wfile.write(bytearray(data, "utf-8"))
         self.end_headers()
 
 
+    # handles POST requests from clients. 
+    # this doesn't seem to need to return anything, but ideally should be coupled with an object that's tied to main/the server. 
     def do_POST(self):
-        code    = 200
-        message = "OK"
-        data    = "{'INFO':200}"
+        code:    int = 200
+        message: str = "OK"
+        data:    str = "{\"INFO\":200}"
 
 
         # example from http read code
-        client_data = json_h.json_load_string(self.http_body_to_string())
+        client_data: dict = json_h.json_load_string(self.http_body_to_string())
 
-        # test query for correct username and password. 
-        query_results = sql_h.sql_execute_search
+        # test query for correct username and password.
+        query_results: dict = sql_h.sql_execute_search
         (
             "SELECT ID,NAME,PASSWORD " +
-            "FROM USERS " +
-            "WHERE NAME IS " + client_data['name'] + "AND PASS IS "+client_data['password']
+            "FROM USERS "              +
+            "WHERE NAME IS " + client_data["name"] + "AND PASS IS "+client_data["password"]
         )
-        
-        # response if the query returned anything
-        if(not(query_results)):
+
+        # response if the query returned anything,
+        # length is 0 whenever the query returns false (IE, nothing).
+        if(len(query_results) < 1):
             code    = 400
             message = "Bad Request"
 

@@ -8,11 +8,14 @@
 
 import global_values         as glob
 import handlers.http_handler as http_h
+import handlers.json_handler as json_h
 import http
 
 
 # handler for the program.
 def main():
+
+    
     # what the constructor for the server's http request socket looks like
     myServerSocketRequest = http_h.ParsingHandler
     with http.server.ThreadingHTTPServer((glob.SERVER_PORT_ADDRESS, glob.SERVER_PORT_NUMBER), myServerSocketRequest) as myServerSocket:

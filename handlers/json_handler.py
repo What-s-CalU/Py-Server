@@ -7,5 +7,6 @@
 import json
 
 # plain english string -> json converter.
-def json_load_string(string):
-    return json.loads(string)
+def json_load_string(string: str):
+    value: dict = json.loads(string)
+    return value
