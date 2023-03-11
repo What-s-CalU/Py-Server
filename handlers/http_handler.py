@@ -6,6 +6,7 @@
 import http.server
 import handlers.json_handler as json_h
 import handlers.sql_handler  as sql_h
+import global_values         as glob
 
 
 
@@ -42,13 +43,17 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
         return self.rfile.read(post_length)
 
     # Sends a templated http response constructed in do_POST().
-    def do_POST_send_response(self, code: int, message: str, data: str):
+    def do_ANY_send_response(self, code: int, message: str, data: str):
         self.send_response(code, message)
 
         # manually converts our data into a blob of bytes for wfile.write(). 
         # *This method cannot accept a normal string that isn't a literal, for whatever reason. 
         self.wfile.write(bytearray(data, "utf-8"))
         self.end_headers()
+
+
+
+
 
 
     # handles POST requests from clients. 
@@ -59,26 +64,35 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
         data:    str = "{\"INFO\":200}"
 
 
-        # example from http read code
-        client_data: dict = json_h.json_load_string(self.http_body_to_string())
+        if(glob.SERVER_IS_UP):
+            # example from http read code
+            client_data: dict = json_h.json_load_string(self.http_body_to_string())
 
-        # test query for correct username and password.
-        query_results: dict = sql_h.sql_execute_search
-        (
-            "SELECT ID,NAME,PASSWORD " +
-            "FROM USERS "              +
-            "WHERE NAME IS " + client_data["name"] + "AND PASS IS "+client_data["password"]
-        )
+            # test query for correct username and password.
+            query_results = sql_h.sql_execute_search
+            (
+                "SELECT ID,NAME,PASSWORD " +
+                "FROM USERS "              +
+                "WHERE NAME IS " + client_data["name"] + "AND PASS IS "+client_data["password"]
+            )
 
-        # response if the query returned anything,
-        # length is 0 whenever the query returns false (IE, nothing).
-        if(len(query_results) < 1):
-            code    = 400
-            message = "Bad Request"
-
+            # response if the query returned anything,
+            # length is 0 whenever the query returns false (IE, nothing).
+            if(len(query_results) < 1):
+                code    = 400
+                message = "Bad Request"
+        else:
+                code    = 503
+                message = "Service Unavailable"
+        
         # construct the server's response to the client. 
-        self.do_POST_send_response(code, message, data)
+        self.do_ANY_send_response(code, message, data)
 
+
+    def do_GET(self):
+        self.do_ANY_send_response(501, "Not Implemented", "")
+    def do_HEAD(self):
+        self.do_ANY_send_response(501, "Not Implemented", "")
 
 
 
