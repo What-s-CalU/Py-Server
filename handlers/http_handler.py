@@ -3,6 +3,7 @@
     List of HTTP Responses: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#server_error_responses
 '''
 
+
 import http.server
 import handlers.json_handler as json_h
 import handlers.sql_handler  as sql_h
@@ -17,11 +18,6 @@ def do_GET_from_url(url:str, port:int=80):
     client_connection_response = client_connection.getresponse()
     client_connection.close()
     return client_connection_response
-
-
-
-
-
 
 
 
