@@ -34,7 +34,7 @@ def long_string(display, text="", num_line=1, num_cols=16):
             display.lcd_display_string(text, num_line)
 
 
-# webscraper's tasks as a thread (which can be ran/released periodically via main)
+# Hardware's tasks as a thread, intended to run forever. 
 class CALUHardwareManagerThread(threading.Thread):
        def run(self):
             # mode and warning flags. 
@@ -79,7 +79,9 @@ class CALUHardwareManagerThread(threading.Thread):
                 sleep(2)
                 display.lcd_clear()
                 sleep(1)
+            ####################################################################
 
+            
             # binds functions to buttons 1 and 2
             rasp_io.add_event_detect(PIN_BTN_1, rasp_io.FALLING, callback=pin_btn_callback,       bouncetime=200)
             rasp_io.add_event_detect(PIN_BTN_2, rasp_io.FALLING, callback=pin_btn_callback_clear, bouncetime=200)
@@ -96,11 +98,11 @@ class CALUHardwareManagerThread(threading.Thread):
                     sleep(2)
                     display.lcd_clear()
                     sleep(1)
-                    display.lcd_display_string("Notifications:", 1)  # Write line of text to second line of display
-                    sleep(3)                                           # Give time for the message to be read
-                    #long_string(display,"most recent notification was: ", 2)   #might use this as another notification 
-                    #sleep(2)                                           # Give time for the message to be read
-                    display.lcd_clear()                                # Clear the display of any data
+                    display.lcd_display_string("Notifications:", 1)             # Write line of text to second line of display
+                    sleep(3)                                                    # Give time for the message to be read
+                    #long_string(display,"most recent notification was: ", 2)   # might use this as another notification 
+                    #sleep(2)                                                   # Give time for the message to be read
+                    display.lcd_clear()                                         # Clear the display of any data
                     sleep(3)          # clear, then loop starts again 	     
             except KeyboardInterrupt as e:
                 print(e)

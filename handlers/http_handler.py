@@ -5,9 +5,10 @@
 
 
 import http.server
-import handlers.json_handler as json_h
-import handlers.sql_handler  as sql_h
-import global_values         as glob
+import handlers.json_handler      as json_h
+import handlers.sql_handler       as sql_h
+import global_values              as glob
+import handlers.threading_handler as thread_h
 
 
 
@@ -30,7 +31,6 @@ def do_GET_from_url(url:str, port:int=80):
 
 # rfile (optional input data from the client) (called using handle())
 # wfile (output stream to write a response to the client)  (called using send_response() and send_header())
-
 class ParsingHandler(http.server.BaseHTTPRequestHandler):
 
     # converts an http request object into a string (could probably write to an intermediate file instead for less ram usage)
@@ -40,23 +40,21 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
 
     # Sends a templated http response constructed in do_POST().
     def do_ANY_send_response(self, code: int, message: str, data: str):
-        self.send_response(code, message)
+        
 
         # manually converts our data into a blob of bytes for wfile.write(). 
         # *This method cannot accept a normal string that isn't a literal, for whatever reason. 
-        self.wfile.write(bytearray(data, "utf-8"))
+        self.send_response(code, message)
+        # self.wfile.write(bytes(data, 'utf-8'))
         self.end_headers()
-
-
-
 
 
 
     # handles POST requests from clients. 
     # this doesn't seem to need to return anything, but ideally should be coupled with an object that's tied to main/the server. 
     def do_POST(self):
-        code:    int = 200
-        message: str = "OK"
+        code:    int = 400
+        message: str = "Bad Request"
         data:    str = "{\"INFO\":200}"
 
 
@@ -65,21 +63,19 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
             client_data: dict = json_h.json_load_string(self.http_body_to_string())
 
             # test query for correct username and password.
-            query_results = sql_h.sql_execute_search
-            (
-                "SELECT ID,NAME,PASSWORD " +
-                "FROM USERS "              +
-                "WHERE NAME IS " + client_data["name"] + "AND PASS IS "+client_data["password"]
-            )
+            client_query =  sql_h.sql_execute_search(
+                "database/root.db",
+                "SELECT NAME " +
+                "FROM USERS "                +
+                "WHERE NAME IS \"" + client_data["name"].upper() + "\" AND PASS IS \"" + client_data["password"]+"\"")
 
-            # response if the query returned anything,
-            # length is 0 whenever the query returns false (IE, nothing).
-            if(len(query_results) < 1):
-                code    = 400
-                message = "Bad Request"
+            if(client_query.fetchone() == client_data["name"].upper()):
+                code    = 200
+                message = "OK"
         else:
-                code    = 503
-                message = "Service Unavailable"
+            code    = 503
+            message = "Service Unavailable"
+            
         
         # construct the server's response to the client. 
         self.do_ANY_send_response(code, message, data)
@@ -87,6 +83,8 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         self.do_ANY_send_response(501, "Not Implemented", "")
+
+
     def do_HEAD(self):
         self.do_ANY_send_response(501, "Not Implemented", "")
 

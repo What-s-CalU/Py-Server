@@ -13,20 +13,18 @@ def sql_execute_command(database, command, shouldCommit=True, shouldResolve=Fals
     # safety check should go here in the future
     sql_connection = sqlite3.connect(database)
     sql_cursor     = sql_connection.cursor()
-    sql_cursor.execute(command)
+    sql_return = sql_cursor.execute(command)
 
     # for INSERT commands
     if(shouldCommit):
         sql_connection.commit()
-
-    # generate resolution table (should support a custom resolve command)
-    resolve = sql_cursor.execute("SELECT name FROM sqlite_master")
     
     # return a status unless the invoker wants the resolution table
     if(not(shouldResolve)):
+        resolve = sql_cursor.execute("SELECT name FROM sqlite_master")
         value = bool(not(resolve.fetchone() is None))
     else:
-        value = resolve.fetchall()
+        value = sql_return
     return value
 
 
