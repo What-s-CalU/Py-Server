@@ -68,8 +68,8 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
                 "SELECT NAME " +
                 "FROM USERS "                +
                 "WHERE NAME IS \"" + client_data["name"].upper() + "\" AND PASS IS \"" + client_data["password"]+"\"")
-
-            if(client_query.fetchone() == client_data["name"].upper()):
+  
+            if(client_query.fetchone() != None):
                 code    = 200
                 message = "OK"
         else:
