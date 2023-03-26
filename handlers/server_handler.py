@@ -6,7 +6,7 @@ import http.server
 import threading
 
 
-# webscraper's tasks as a thread (which can be ran/released periodically via main)
+# The HTTP send<->recieve element of What's@Calu
 class CALUServerhandlerThread(threading.Thread):
     def run(self):
         # what the constructor for the server's http request socket looks like

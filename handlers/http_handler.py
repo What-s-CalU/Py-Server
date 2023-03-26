@@ -69,6 +69,8 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
                 "FROM USERS "                +
                 "WHERE NAME IS \"" + client_data["name"].upper() + "\" AND PASS IS \"" + client_data["password"]+"\"")
   
+
+            # check to see if the query returned anything (IE, what we were looking for is int he database)
             if(client_query.fetchone() != None):
                 code    = 200
                 message = "OK"
