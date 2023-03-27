@@ -1,5 +1,0 @@
-'''
-    struct
-        string request name
-
-'''

@@ -21,7 +21,7 @@ def main():
     
     # Make threads
     serverRequestThread = serv_h.CALUServerhandlerThread()
-    emailSendingThread  = email_h.CALUEmailhandlerThread()
+    # emailSendingThread  = email_h.CALUEmailhandlerThread()
 
     # Public facing HTTP control.
     #* this can be set to False to deny service while the server is updating. 
@@ -29,8 +29,8 @@ def main():
 
 
     # run threads
-    # serverRequestThread.start()
-    emailSendingThread.start()
+    serverRequestThread.start()
+    # emailSendingThread.start()
     
     # Keeps main alive (no rogue threads)
     while True:
