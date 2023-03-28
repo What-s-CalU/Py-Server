@@ -4,7 +4,6 @@
     For reading SQL in Visual Studio Code: Use the SQLite extension. 
     For editing SQL in a traditional editor: https://sqlitebrowser.org/dl/
 '''
-
 import sqlite3
 
 def sql_execute_command(database, command, shouldCommit=True, shouldResolve=False):
@@ -13,7 +12,7 @@ def sql_execute_command(database, command, shouldCommit=True, shouldResolve=Fals
     # safety check should go here in the future
     sql_connection = sqlite3.connect(database)
     sql_cursor     = sql_connection.cursor()
-    sql_return = sql_cursor.execute(command)
+    sql_return     = sql_cursor.execute(command)
 
     # for INSERT commands
     if(shouldCommit):
