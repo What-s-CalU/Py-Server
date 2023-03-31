@@ -19,11 +19,15 @@ def sql_execute_command(database, command, shouldCommit=True, shouldResolve=Fals
         sql_connection.commit()
     
     # return a status unless the invoker wants the resolution table
+    # if not, the return type becomes BOOL
     if(not(shouldResolve)):
-        resolve = sql_cursor.execute("SELECT name FROM sqlite_master")
-        value = bool(not(resolve.fetchone() is None))
+        value = bool(not(sql_return.fetchone() is None) or (sql_cursor.rowcount > 0))
     else:
         value = sql_return
+
+    # clean up connections. 
+    sql_cursor.close()
+    sql_connection.close()
     return value
 
 
@@ -33,7 +37,7 @@ def sql_execute_search(database, command):
     return sql_execute_command(database, command, False, True)
 
 
-def sql_execute_insert(database, command, shouldResolve=True):
+def sql_execute_insert(database, command, shouldResolve=False):
     return sql_execute_command(database, command, True, shouldResolve)
 
 

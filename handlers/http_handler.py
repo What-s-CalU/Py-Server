@@ -161,7 +161,7 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
                     (
                         "root.db",
                         "INSERT INTO SIGNUP(NAME, CHECKSUM, TIME) " +
-                        "VALUES("+ client_data['username'] + ", " + client_checksum + ", " + str(client_time) + ")"
+                        "VALUES(\""+ client_data['username'] + "\", \"" + client_checksum + "\", \"" + str(client_time) + "\")"
                     )
 
                     # for testing; replace with email query. 
@@ -217,7 +217,7 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
                 (
                     "root.db",
                     "INSERT INTO USERS(name, password)" +
-                    "VALUES("+ client_data['username'] + ", " + client_data['password'] + ")"
+                    "VALUES(\"" + client_data['username'] + "\", \"" + client_data['password'] + "\")"
                 )
                 # delete the temporary signup value. User is now signed up. 
                 sql_h.sql_execute_command

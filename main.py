@@ -11,6 +11,7 @@ import handlers.http_handler   as http_h
 import handlers.json_handler   as json_h
 import handlers.server_handler as serv_h
 import handlers.email_handler  as email_h
+import handlers.sql_handler    as sql_h
 import http
 import time
 
@@ -26,7 +27,6 @@ def main():
     # Public facing HTTP control.
     #* this can be set to False to deny service while the server is updating. 
     glob.SERVER_IS_UP = True
-
 
     # run threads
     serverRequestThread.start()
