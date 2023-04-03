@@ -59,11 +59,17 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
     # Sends a templated http response constructed in do_POST().
     def do_ANY_send_response(self, code: int, message: str, data: str):
         
+        
 
         # manually converts our data into a blob of bytes for wfile.write(). 
         # *This method cannot accept a normal string that isn't a literal, for whatever reason. 
         self.send_response(code, message)
-        # self.wfile.write(bytes(data, 'utf-8'))
+
+        
+        # data_oct = data.encode("utf-8")
+        # self.send_header("Content-length", data_oct.__len__)
+        # self.wfile.write(data_oct)
+
         self.end_headers()
 
 
@@ -86,9 +92,9 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
             elif(client_data['request_type'] == "signup_start"):
                 self.do_POST_signup_start(client_data)
             elif(client_data['request_type'] == "signup_continue"):
-                self.do_POST_signup_start(client_data)
+                self.do_POST_signup_continue(client_data)
             elif(client_data['request_type'] == "signup_end"):
-                self.do_POST_signup_start(client_data)
+                self.do_POST_signup_end(client_data)
             else:
                 self.dopost_code    = 506
                 self.dopost_message = "Not Acceptable"
@@ -109,11 +115,10 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
             
             
             # test query for correct username and password.
-            client_query =  sql_h.sql_execute_search(
+            client_query =  sql_h.sql_execute_safe_search(
                 "database/root.db",
-                "SELECT NAME " +
-                "FROM USERS "                +
-                "WHERE NAME IS \"" + client_data["username"] + "\" AND PASS IS \"" + client_data["password"]+"\"")
+                "SELECT NAME FROM USERS WHERE NAME IS ? AND PASS IS ?",
+                (client_data["username"], client_data["password"]))
   
 
             # check to see if the query returned anything (IE, what we were looking for is int he database)
@@ -131,38 +136,33 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
             client_data["username"] = client_data["username"].upper()
             
             # test query for any present users already signed up.
-            client_query =  sql_h.sql_execute_search(
+            client_query =  sql_h.sql_execute_safe_search(
                 "database/root.db",
-                "SELECT NAME "            +
-                "FROM USERS "             +
-                "WHERE NAME IS \"" + client_data["username"] + "\"")
-
+                "SELECT NAME FROM USERS WHERE NAME IS ?",
+                (client_data["username"],))
 
             # check to see if the query returned anything (none = no user)
             if(client_query.fetchone() == None):
 
                 # test query for any present users waiting to sign up.
-                client_query =  sql_h.sql_execute_search(
+                client_query =  sql_h.sql_execute_safe_search(
                     "database/root.db",
-                    "SELECT NAME "            +
-                    "FROM SIGNUP "             +
-                    "WHERE NAME IS \"" + client_data["username"] + "\"")
+                    "SELECT NAME FROM SIGNUP WHERE NAME IS ?",
+                    (client_data["username"],))
                 
                 if(client_query.fetchone() == None):
                     # prepare information to be inserted into the database. 
-                    client_checksum: str   = generate_checksum(10)
+                    client_checksum: str = generate_checksum(10)
 
                     # seconds since epoch, easy to parse. 
                     client_time:     int = time.time()
                     
                     # actually insert the time. 
                     # format taken from https://www.sqlitetutorial.net/sqlite-python/insert/
-                    sql_h.sql_execute_insert
-                    (
-                        "root.db",
-                        "INSERT INTO SIGNUP(NAME, CHECKSUM, TIME) " +
-                        "VALUES(\""+ client_data['username'] + "\", \"" + client_checksum + "\", \"" + str(client_time) + "\")"
-                    )
+                    sql_h.sql_execute_safe_insert(
+                        "database/root.db",
+                        "INSERT INTO SIGNUP(NAME, CHECKSUM, TIME) VALUES(?, ?, ?)",
+                        (client_data["username"], client_checksum, client_time))
 
                     # for testing; replace with email query. 
                     print(client_data['username'] + " registered with checksum: " + client_checksum + ".\n")
@@ -185,13 +185,12 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
     def do_POST_signup_continue(self, client_data):
             # rectify username. 
             client_data["username"] = client_data["username"].upper()
-            
+
             # test query for correct username and password.
-            client_query =  sql_h.sql_execute_search(
+            client_query =  sql_h.sql_execute_safe_search(
                 "database/root.db",
-                "SELECT NAME " +
-                "FROM SIGNUP " +
-                "WHERE NAME IS \"" + client_data["username"] + "\" AND CHECKSUM IS \"" + client_data["checksum"]+"\"")
+                "SELECT NAME FROM SIGNUP WHERE NAME IS ? AND CHECKSUM IS ?",
+               (client_data["username"], client_data["checksum"])) 
   
 
             # check to see if the query returned anything (IE, what we were looking for is in the database)
@@ -213,19 +212,16 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
             self.do_POST_signup_continue(client_data)
             if(self.dopost_code == 200):
                 # test query for correct username and password.
-                sql_h.sql_execute_insert
-                (
-                    "root.db",
-                    "INSERT INTO USERS(name, password)" +
-                    "VALUES(\"" + client_data['username'] + "\", \"" + client_data['password'] + "\")"
-                )
-                # delete the temporary signup value. User is now signed up. 
-                sql_h.sql_execute_command
-                (
-                     "root.db",
-                    "DELETE FROM SIGNUP" +
-                    "WHERE NAME IS \""+ client_data['username'] + "\" AND CHECKSUM IS \"" + client_data['checksum'] + "\""
-                )
+                client_query =  sql_h.sql_execute_safe_insert(
+                    "database/root.db",
+                    "INSERT INTO USERS(NAME, PASS) VALUES(?, ?)",
+                    (client_data["username"], client_data["password"])) 
+            
+                # delete the temporary signup value. User is now signed up.
+                sql_h.sql_execute_safe_insert(
+                    "database/root.db",
+                    "DELETE FROM SIGNUP WHERE NAME IS ? AND CHECKSUM IS ?",
+                    (client_data["username"], client_data["checksum"]))
             else:
                 self.dopost_code    = 401
                 self.dopost_message = "Unauthorized"

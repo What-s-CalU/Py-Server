@@ -6,6 +6,41 @@
 '''
 import sqlite3
 
+
+def sql_execute_safe_command(database: str, command: str, params: tuple, shouldCommit: bool = True, shouldResolve: bool = False):
+    value = False
+    # establish a connection and execute the command
+    # safety check should go here in the future
+    sql_connection = sqlite3.connect(database)
+    sql_cursor     = sql_connection.cursor()
+    sql_return     = sql_cursor.execute(command, params)
+
+    # for INSERT commands
+    if(shouldCommit):
+        sql_connection.commit()
+    
+    # return a status unless the invoker wants the resolution table
+    # if not, the return type becomes BOOL
+    if(not(shouldResolve)):
+        value = bool(not(sql_return.fetchone() is None) or (sql_cursor.rowcount > 0))
+    else:
+        value = sql_return
+
+    # clean up connections. 
+    # sql_cursor.close()
+    # sql_connection.close()
+    return value
+
+
+# Subfunctions with plain english names that invoke sql_execute_command()
+def sql_execute_safe_search(database: str, command: str, params: tuple):
+    return sql_execute_safe_command(database, command, params, False, True)
+
+
+def sql_execute_safe_insert(database: str, command: str, params: tuple, shouldResolve: bool = False):
+    return sql_execute_safe_command(database, command, params, True, shouldResolve)
+
+
 def sql_execute_command(database, command, shouldCommit=True, shouldResolve=False):
     value = False
     # establish a connection and execute the command
@@ -26,8 +61,8 @@ def sql_execute_command(database, command, shouldCommit=True, shouldResolve=Fals
         value = sql_return
 
     # clean up connections. 
-    sql_cursor.close()
-    sql_connection.close()
+    # sql_cursor.close()
+    # sql_connection.close()
     return value
 
 
