@@ -58,19 +58,11 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
 
     # Sends a templated http response constructed in do_POST().
     def do_ANY_send_response(self, code: int, message: str, data: str):
-        
-        
-
-        # manually converts our data into a blob of bytes for wfile.write(). 
-        # *This method cannot accept a normal string that isn't a literal, for whatever reason. 
         self.send_response(code, message)
-
-        
-        # data_oct = data.encode("utf-8")
-        # self.send_header("Content-length", data_oct.__len__)
-        # self.wfile.write(data_oct)
-
         self.end_headers()
+        self.wfile.write(data.encode())
+
+ 
 
 
 
