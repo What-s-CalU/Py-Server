@@ -9,12 +9,14 @@ import handlers.json_handler      as json_h
 import handlers.sql_handler       as sql_h
 import global_values              as glob
 import time
+import random, string
 
+#
+# Utility functions used by the parse handler that are -technically- agnostic of the handler.
+#
 
 # Simple function taken from sth on stackoverflow.
 # https://stackoverflow.com/questions/2030053/how-to-generate-random-strings-in-python
-import random, string
-
 def generate_checksum(length:int):
     result: str = ""
     choice_pool = string.ascii_uppercase
@@ -24,7 +26,7 @@ def generate_checksum(length:int):
     return result
 
 
-# returns a GET http response from a website. 
+# returns a GET http response from a website.
 def do_GET_from_url(url:str, port:int=80):
     client_connection: http.client.HTTPSConnection = http.client.HTTPSConnection(host=url, port=port)
     client_connection.request("GET", url)
@@ -46,15 +48,22 @@ def do_GET_from_url(url:str, port:int=80):
 class ParsingHandler(http.server.BaseHTTPRequestHandler):
 
 
+    # hackmey object-namespace variables we use for decoupled functions/as an impromptu data structure.
+    # technically not a part of structured programming, but they make passing values between functions easier notationally. 
     dopost_code:    int = 400
     dopost_message: str = "Bad Request"
     dopost_data:    str = "{\"INFO\":200}"
 
 
+#
+# Utility functions used by the parse handler. 
+#
+
     # converts an http request object into a string (could probably write to an intermediate file instead for less ram usage)
     def http_body_to_string(self):
         post_length: int = int(self.headers['Content-length'])
         return self.rfile.read(post_length)
+
 
     # Sends a templated http response constructed in do_POST().
     def do_ANY_send_response(self, code: int, message: str, data: str):
@@ -62,12 +71,13 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data.encode())
 
- 
 
+#
+# Query handling code for the python server backend. 
+#
 
-
-    # handles POST requests from clients. 
-    # this doesn't seem to need to return anything, but ideally should be coupled with an object that's tied to main/the server. 
+    # handles POST requests from clients; IE, the only requests the application makes. 
+    # task-specific code that touches the datapase are all prefixed with do_POST, and outlined below this. 
     def do_POST(self):
         self.dopost_code    = 400
         self.dopost_message = "Bad Request"
@@ -101,9 +111,12 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
 
 
 
+    # Handles requests for a user to sign into the application.
+    # Expects username (email handle) and password fields. 
     def do_POST_signin(self, client_data):
             # rectify username. 
             client_data["username"] = client_data["username"].upper()
+            # password is case sensitive, and thus is ignored. 
             
             
             # test query for correct username and password.
@@ -156,7 +169,7 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
                         "INSERT INTO SIGNUP(NAME, CHECKSUM, TIME) VALUES(?, ?, ?)",
                         (client_data["username"], client_checksum, client_time))
 
-                    # for testing; replace with email query. 
+                    # For console logs; printed alongside email query.
                     print(client_data['username'] + " registered with checksum: " + client_checksum + ".\n")
 
                     # request is OK, return to client. 
@@ -195,7 +208,6 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
                 self.dopost_message = "Unauthorized"
 
 
-
     def do_POST_signup_end(self, client_data):
             # rectify username. 
             client_data["username"] = client_data["username"].upper()
@@ -203,8 +215,8 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
             # repeat the checks for continuing. 
             self.do_POST_signup_continue(client_data)
             if(self.dopost_code == 200):
-                # test query for correct username and password.
-                client_query =  sql_h.sql_execute_safe_insert(
+                # assign these new user values to the database. 
+                sql_h.sql_execute_safe_insert(
                     "database/root.db",
                     "INSERT INTO USERS(NAME, PASS) VALUES(?, ?)",
                     (client_data["username"], client_data["password"])) 
@@ -214,17 +226,18 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
                     "database/root.db",
                     "DELETE FROM SIGNUP WHERE NAME IS ? AND CHECKSUM IS ?",
                     (client_data["username"], client_data["checksum"]))
+            
+            # Otherwise, the user is not valid (we reuse the checksum to -try- to prevent a man in the middle attack/mass signups).
             else:
                 self.dopost_code    = 401
                 self.dopost_message = "Unauthorized"
 
 
+    # we do not implement proper HTTP protocol, so it's unimplemented here. 
     def do_GET(self):
         self.do_ANY_send_response(501, "Not Implemented", "")
 
-
     def do_HEAD(self):
         self.do_ANY_send_response(501, "Not Implemented", "")
-
 
 
