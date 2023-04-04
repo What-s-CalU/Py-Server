@@ -21,23 +21,25 @@ def main():
     # startup code here ...
     
     # Make threads
-    # serverRequestThread = serv_h.CALUServerhandlerThread()
-    emailSendingThread  = email_h.CALUEmailhandlerThread()
+    serverRequestThread = serv_h.CALUServerhandlerThread()
+    serverRequestThread.daemon = True
+    # emailSendingThread  = email_h.CALUEmailhandlerThread()
 
     # Public facing HTTP control.
     #* this can be set to False to deny service while the server is updating. 
     glob.SERVER_IS_UP = True
 
     # run threads
-    # serverRequestThread.start()
-    emailSendingThread.start()
+    serverRequestThread.start()
+    # emailSendingThread.start()
     
-    # Keeps main alive (no rogue threads)
-    #while True:
-    #    time.sleep(1)
+    # Keeps main alive (no rogue threads on exit)
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        return 0
     
-    return 0
-
 
 
 # autoruns main. 

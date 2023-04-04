@@ -5,9 +5,10 @@
 
 
 import http.server
-import handlers.json_handler      as json_h
-import handlers.sql_handler       as sql_h
-import global_values              as glob
+import handlers.json_handler      as     json_h
+import handlers.sql_handler       as     sql_h
+import global_values              as     glob
+from   handlers.email_handler     import send_email
 import time
 import random, string
 
@@ -58,6 +59,9 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
 #
 # Utility functions used by the parse handler. 
 #
+    def set_response_header(self, code, message):
+        self.dopost_code    = code
+        self.dopost_message = message
 
     # converts an http request object into a string (could probably write to an intermediate file instead for less ram usage)
     def http_body_to_string(self):
@@ -79,8 +83,7 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
     # handles POST requests from clients; IE, the only requests the application makes. 
     # task-specific code that touches the datapase are all prefixed with do_POST, and outlined below this. 
     def do_POST(self):
-        self.dopost_code    = 400
-        self.dopost_message = "Bad Request"
+        self.set_response_header(400, "Bad Request")
         self.dopost_data    = "{\"INFO\":200}"
 
         # example from http read code
@@ -88,22 +91,34 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
         
         if(glob.SERVER_IS_UP):
 
-            # switch statement for event mapping. 
+            # switch statement for event mapping.
+
+            # signin
             if(client_data['request_type']   == "signin"):
                 self.do_POST_signin(client_data)
+
+            # account creation block
             elif(client_data['request_type'] == "signup_start"):
                 self.do_POST_signup_start(client_data)
             elif(client_data['request_type'] == "signup_continue"):
                 self.do_POST_signup_continue(client_data)
             elif(client_data['request_type'] == "signup_end"):
                 self.do_POST_signup_end(client_data)
+            
+            # password reset block
+            elif(client_data['request_type'] == "reset_start"):
+                self.do_POST_reset_start(client_data)
+            elif(client_data['request_type'] == "reset_continue"):
+                self.do_POST_reset_continue(client_data)
+            elif(client_data['request_type'] == "reset_end"):
+                self.do_POST_reset_end(client_data)
+            
+            # catchall
             else:
-                self.dopost_code    = 506
-                self.dopost_message = "Not Acceptable"
+                self.set_response_header(506, "Not Acceptable")
         # catchall for no service. 
         else:
-            self.dopost_code    = 503
-            self.dopost_message = "Service Unavailable"
+            self.set_response_header(503, "Service Unavailable")
             
         
         # construct the server's response to the client. 
@@ -128,12 +143,11 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
 
             # check to see if the query returned anything (IE, what we were looking for is int he database)
             if(client_query.fetchone() != None):
-                self.dopost_code    = 200
-                self.dopost_message = "OK"
+                self.set_response_header(200, "OK")
             # incorrect password or username; no access is granted. 
             else:
-                self.dopost_code    = 401
-                self.dopost_message = "Unauthorized"
+                self.set_response_header(401, "Unauthorized")
+
 
 
     def do_POST_signup_start(self, client_data):
@@ -170,21 +184,22 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
                         (client_data["username"], client_checksum, client_time))
 
                     # For console logs; printed alongside email query.
-                    print(client_data['username'] + " registered with checksum: " + client_checksum + ".\n")
-
+                    print(client_data['username']+"@pennwest.edu" + " registered with checksum: " + client_checksum + ".\n")
+                    send_email(
+                            client_data['username']+"@pennwest.edu",
+                            "Your What's@Calu Verification Code",
+                            "Your What's@Calu Verification Code is:\n\""+ client_checksum+"\",\nDo not share this code with anyone. What's@Calu will never ask you to generate this code for use outside of the What's@Calu Planner app.")
+                    
                     # request is OK, return to client. 
-                    self.dopost_code    = 200
-                    self.dopost_message = "OK"
+                    self.set_response_header(200, "OK")
 
                 # this client already is signed up or queued to sign up; cannot begin the signin process again. 
                 else:
-                    self.dopost_code    = 401
-                    self.dopost_message = "Unauthorized"
+                    self.set_response_header(401, "Unauthorized")
             
             # this client already is signed up or queued to sign up; cannot begin the signin process again. 
             else:
-                self.dopost_code    = 401
-                self.dopost_message = "Unauthorized"
+                self.set_response_header(401, "Unauthorized")
 
 
     def do_POST_signup_continue(self, client_data):
@@ -200,12 +215,10 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
 
             # check to see if the query returned anything (IE, what we were looking for is in the database)
             if(client_query.fetchone() != None):
-                self.dopost_code    = 200
-                self.dopost_message = "OK"
+                self.set_response_header(200, "OK")
             # incorrect checksum (user cannot edit their username by this point).
             else:
-                self.dopost_code    = 401
-                self.dopost_message = "Unauthorized"
+                self.set_response_header(401, "Unauthorized")
 
 
     def do_POST_signup_end(self, client_data):
@@ -229,8 +242,105 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
             
             # Otherwise, the user is not valid (we reuse the checksum to -try- to prevent a man in the middle attack/mass signups).
             else:
-                self.dopost_code    = 401
-                self.dopost_message = "Unauthorized"
+                self.set_response_header(401, "Unauthorized")
+
+
+
+    def do_POST_reset_start(self, client_data):
+            # rectify username. 
+            client_data["username"] = client_data["username"].upper()
+            
+            # test query for any present users already signed up.
+            client_query =  sql_h.sql_execute_safe_search(
+                "database/root.db",
+                "SELECT NAME FROM USERS WHERE NAME IS ?",
+                (client_data["username"],))
+
+            # check to see if the query returned anything (none = no user)
+            if(client_query.fetchone() != None):
+
+                # test query for any present users waiting to sign up.
+                client_query =  sql_h.sql_execute_safe_search(
+                    "database/root.db",
+                    "SELECT NAME FROM RESET WHERE NAME IS ?",
+                    (client_data["username"],))
+                
+                if(client_query.fetchone() == None):
+                    # prepare information to be inserted into the database. 
+                    client_checksum: str = generate_checksum(10)
+
+                    # seconds since epoch, easy to parse. 
+                    client_time:     int = time.time()
+                    
+                    # actually insert the time. 
+                    # format taken from https://www.sqlitetutorial.net/sqlite-python/insert/
+                    sql_h.sql_execute_safe_insert(
+                        "database/root.db",
+                        "INSERT INTO RESET(NAME, CHECKSUM, TIME) VALUES(?, ?, ?)",
+                        (client_data["username"], client_checksum, client_time))
+
+                    # For console logs; printed alongside email query.
+                    print(client_data['username']+"@pennwest.edu" + " registered with checksum: " + client_checksum + ".\n")
+                    send_email(
+                            client_data['username']+"@pennwest.edu",
+                            "Your What's@Calu Password Reset Code",
+                            "Your What's@Calu Password Reset Code is:\n\""+ client_checksum+"\",\nDo not share this code with anyone. What's@Calu will never ask you to generate this code for use outside of the What's@Calu Planner app.")
+                    
+                    # request is OK, return to client. 
+                    self.set_response_header(200, "OK")
+
+                # this client already is signed up or queued to sign up; cannot begin the signin process again. 
+                else:
+                    self.set_response_header(401, "Unauthorized")
+            
+            # this client already is signed up or queued to sign up; cannot begin the signin process again. 
+            else:
+                self.set_response_header(401, "Unauthorized")
+
+
+    def do_POST_reset_continue(self, client_data):
+            # rectify username. 
+            client_data["username"] = client_data["username"].upper()
+
+            # test query for correct username and password.
+            client_query =  sql_h.sql_execute_safe_search(
+                "database/root.db",
+                "SELECT NAME FROM RESET WHERE NAME IS ? AND CHECKSUM IS ?",
+               (client_data["username"], client_data["checksum"])) 
+  
+
+            # check to see if the query returned anything (IE, what we were looking for is in the database)
+            if(client_query.fetchone() != None):
+                self.set_response_header(200, "OK")
+            # incorrect checksum (user cannot edit their username by this point).
+            else:
+                self.set_response_header(401, "Unauthorized")
+
+
+    def do_POST_reset_end(self, client_data):
+            # rectify username. 
+            client_data["username"] = client_data["username"].upper()
+
+            # repeat the checks for continuing. 
+            self.do_POST_reset_continue(client_data)
+            if(self.dopost_code == 200):
+                # assign these new user values to the database. 
+                sql_h.sql_execute_safe_insert(
+                    "database/root.db",
+                    "UPDATE USERS SET NAME=?, PASS=? WHERE NAME=?",
+                    (client_data["username"], client_data["password"], client_data["username"])) 
+            
+                # delete the temporary signup value. User is now signed up.
+                sql_h.sql_execute_safe_insert(
+                    "database/root.db",
+                    "DELETE FROM RESET WHERE NAME IS ? AND CHECKSUM IS ?",
+                    (client_data["username"], client_data["checksum"]))
+            
+            # Otherwise, the user is not valid (we reuse the checksum to -try- to prevent a man in the middle attack/mass signups).
+            else:
+                self.set_response_header(401, "Unauthorized")
+
+
 
 
     # we do not implement proper HTTP protocol, so it's unimplemented here. 
