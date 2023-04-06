@@ -11,6 +11,11 @@ import global_values              as     glob
 from   handlers.email_handler     import send_email
 import time
 import random, string
+from   http_handler_util          import get_category_id
+from   http_handler_util          import get_user_id
+from   http_handler_util          import insert_new_category
+from   http_handler_util          import insert_new_event
+from   http_handler_util          import insert_new_user_category_subscription
 
 #
 # Utility functions used by the parse handler that are -technically- agnostic of the handler.
@@ -112,6 +117,8 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
                 self.do_POST_reset_continue(client_data)
             elif(client_data['request_type'] == "reset_end"):
                 self.do_POST_reset_end(client_data)
+
+            # add event
             elif(client_data['request_type'] == "add_custom_event"):
                  self.do_POST_add_custom_event(client_data)
             
@@ -129,97 +136,40 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
 
     # Handles requests to add a user created event
     def do_POST_add_custom_event(self, client_data):
-        client_data["username"] = client_data["username"].upper()
+            client_data["username"] = client_data["username"].upper()
 
-        # Get user_id from USERS table
-        user_id_query = sql_h.sql_execute_safe_search(
-            "database/root.db",
-            "SELECT ID FROM USERS WHERE NAME IS ?",
-            (client_data["username"],)
-        )
-        user_id_result = user_id_query.fetchone()
-        if user_id_result is None:
-            self.set_response_header(400, 'User not found')
-            return
-        user_id = user_id_result[0]
+            # Get user_id from USERS table
+            user_id = get_user_id(client_data["username"])
+            if user_id is None:
+                self.set_response_header(400, 'User not found')
+                return
 
-        # Get category_id from CATEGORIES table
-        category_id_query = sql_h.sql_execute_safe_search(
-            "database/root.db",
-            "SELECT ID FROM CATEGORIES WHERE NAME IS ? AND USER_ID IS ?",
-            (client_data["category"], user_id)
-        )
-        category_id_result = category_id_query.fetchone()
-        
-        if category_id_result is None:
-            # Insert new category and get the category_id
-            sql_h.sql_execute_safe_insert(
-                "database/root.db",
-                """
-                INSERT INTO CATEGORIES 
-                (
-                    NAME,
-                    USER_ID
-                ) 
-                VALUES 
-                (
-                    ?,
-                    ?
-                )""",
-                (
-                    client_data["category"],
-                    user_id
-                )
-            )
-            category_id_query = sql_h.sql_execute_safe_search(
-                "database/root.db",
-                "SELECT ID FROM CATEGORIES WHERE NAME IS ? AND USER_ID IS ?",
-                (client_data["category"], user_id)
-            )
-            category_id_result = category_id_query.fetchone()
+            # Get category_id from CATEGORIES table
+            category_id = get_category_id(client_data["category"], user_id)
 
-            category_id = category_id_result[0]
+            if category_id is None:
+                # Insert new category and get the category_id
+                insert_new_category(client_data["category"], user_id)
+                category_id = get_category_id(client_data["category"], user_id)
+
+                # Insert new user category subscription
+                insert_new_user_category_subscription(user_id, category_id)
 
             # Insert the custom event into the EVENTS table
-            sql_h.sql_execute_safe_insert(
-                "database/root.db",
-                """
-                INSERT INTO EVENTS 
-                (
-                    START_TIME, 
-                    END_TIME, 
-                    TITLE, 
-                    COLOR, 
-                    DESCRIPTION, 
-                    CATEGORY_ID, 
-                    IS_CUSTOM, 
-                    USER_ID, 
-                    FLAG
-                )
-                VALUES 
-                (
-                    ?,
-                    ?, 
-                    ?, 
-                    ?, 
-                    ?, 
-                    ?, 
-                    ?, 
-                    ?, 
-                    NULL
-                )""",
-                (
-                    client_data['start_time'],
-                    client_data['end_time'],
-                    client_data['title'],
-                    client_data['color'],
-                    client_data['description'],
-                    category_id,
-                    client_data['isCustom'],
-                    user_id,
-                )
+            insert_new_event(
+                client_data['start_time'],
+                client_data['end_time'],
+                client_data['title'],
+                client_data['color'],
+                client_data['description'],
+                category_id,
+                client_data['isCustom'],
+                user_id,
+                None
             )
+
             self.set_response_header(200, "OK")
+
 
 
 
