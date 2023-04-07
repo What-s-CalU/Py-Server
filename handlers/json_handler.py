@@ -10,3 +10,6 @@ import json
 def json_load_string(string: str):
     value: dict = json.loads(string)
     return value
+
+def json_dump_string(data):
+    return json.dumps(data)

@@ -7,7 +7,7 @@
 import http.server
 import handlers.json_handler      as     json_h
 import handlers.sql_handler       as     sql_h
-import handlers.json_handler      as     util_h
+import handlers.http_handler_util as     util_h
 import global_values              as     glob
 from   handlers.email_handler     import send_email
 import time
@@ -116,6 +116,10 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
             # add event
             elif(client_data['request_type'] == "add_custom_event"):
                  self.do_POST_add_custom_event(client_data)
+
+            # send user events
+            elif(client_data['request_type'] == "get_user_subscribed_events"):
+                 self.do_POST_get_user_subscribed_events(client_data)
             
             # catchall
             else:
@@ -128,7 +132,27 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
         # construct the server's response to the client. 
         self.do_ANY_send_response(self.dopost_code, self.dopost_message, self.dopost_data)
 
+    # Handles requests for all events users a subscribe to
+    def do_POST_get_user_subscribed_events(self, client_data):
+        client_data["username"] = client_data["username"].upper()
 
+        # Get user_id from USERS table
+        user_id = util_h.get_user_id(client_data["username"])
+        if user_id is None:
+            self.set_response_header(400, 'User not found')
+            return
+
+        # Get the list of events the user is subscribed to
+        user_subscribed_events = util_h.get_user_subscribed_events(user_id)
+
+        # Convert the list of events to a JSON string and put it in post data
+        self.dopost_data = json_h.json_dump_string(user_subscribed_events)
+
+        self.set_response_header(200, "OK")
+
+
+
+    
     # Handles requests to add a user created event
     def do_POST_add_custom_event(self, client_data):
             client_data["username"] = client_data["username"].upper()
