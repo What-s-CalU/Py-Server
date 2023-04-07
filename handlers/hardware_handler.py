@@ -10,6 +10,7 @@ from time import sleep
 import threading
 import RPi.GPIO as rasp_io
 import drivers
+import handlers.threading_handler as thread_h
 
 # globals specific to this module. 
 PIN_BTN_1: int = 17
@@ -37,6 +38,8 @@ def long_string(display, text="", num_line=1, num_cols=16):
 # Hardware's tasks as a thread, intended to run forever. 
 class CALUHardwareManagerThread(threading.Thread):
        def run(self):
+            suppressed: bool = True
+
             # mode and warning flags. 
             rasp_io.setmode(rasp_io.BCM)
             rasp_io.setwarnings(False)
@@ -64,6 +67,7 @@ class CALUHardwareManagerThread(threading.Thread):
             ####################################################################
             # inline functions for buttons 1 and 2
             def pin_btn_callback(channel):
+                suppressed = not(suppressed)
                 rasp_io.output(PIN_LED_1, True)
                 sleep(1)
                 rasp_io.output(PIN_LED_1,False)
@@ -74,11 +78,11 @@ class CALUHardwareManagerThread(threading.Thread):
                 sleep(1)
                 rasp_io.output(PIN_LED_2, False)
                 display.lcd_clear()
-                display.lcd_display_string("clearing", 1) 
-                display.lcd_display_string("screen  ", 2)
+                display.lcd_display_string("clearing ...", 1) 
+                display.lcd_display_string("screen   ...", 2)
                 sleep(2)
                 display.lcd_clear()
-                sleep(1)
+                sleep(2)
             ####################################################################
 
             
@@ -89,23 +93,25 @@ class CALUHardwareManagerThread(threading.Thread):
 
             #continous loop for LCD display
             #######################################################################
+            
+            display.lcd_display_string("What's @ CALU!", 1)  # Write line of text to first line of display
+            sleep(2)
             try:
                 while True:
-                    display.lcd_display_string("What's @ CALU!", 1)  # Write line of text to first line of display
+                    if(suppressed):
+                        display.lcd_display_string("Sleeping ...", 1)
+                    while not(suppressed):
+                        display.lcd_display_string("Notifications:", 1)
+                        # try to acquire the new global notification string
+                        thread_h.update_message_lock.aquire()
+                        long_string(display, thread_h.NOTIFICATION_MESSAGE, 2)
+                        thread_h.update_message_lock.release()
+                        sleep(2)
+                        display.lcd_clear()
+                        sleep(2) # clear, then loop starts again
                     sleep(2)
-                    display.lcd_clear()
-                    long_string(display,"upcoming notifications:", 2)  # Write line of text to first line of display
-                    sleep(2)
-                    display.lcd_clear()
-                    sleep(1)
-                    display.lcd_display_string("Notifications:", 1)             # Write line of text to second line of display
-                    sleep(3)                                                    # Give time for the message to be read
-                    #long_string(display,"most recent notification was: ", 2)   # might use this as another notification 
-                    #sleep(2)                                                   # Give time for the message to be read
-                    display.lcd_clear()                                         # Clear the display of any data
-                    sleep(3)          # clear, then loop starts again 	     
             except KeyboardInterrupt as e:
                 print(e)
                 display.lcd_clear()	 # clear the display 
-                rasp_io.cleanup()	 #clear gpio settings 
+                rasp_io.cleanup()	 # clear gpio settings 
             ######################################################################

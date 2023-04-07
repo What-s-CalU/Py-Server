@@ -6,12 +6,13 @@
 
 
 
-import global_values           as glob
-import handlers.http_handler   as http_h
-import handlers.json_handler   as json_h
-import handlers.server_handler as serv_h
-import handlers.email_handler  as email_h
-import handlers.sql_handler    as sql_h
+import global_values            as glob
+import handlers.http_handler    as http_h
+import handlers.json_handler    as json_h
+import handlers.server_handler  as serv_h
+import handlers.email_handler   as email_h
+import handlers.sql_handler     as sql_h
+import handlers.scraper_handler as scrape_h
 import http
 import time
 
@@ -23,7 +24,13 @@ def main():
     # Make threads
     serverRequestThread = serv_h.CALUServerhandlerThread()
     serverRequestThread.daemon = True
-    # emailSendingThread  = email_h.CALUEmailhandlerThread()
+    
+    # webScrapingThread  = scrape_h.CALUWebScraperThread()
+    # webScrapingThread.daemon = True
+    
+    # hardwareHandlerThread = hardware_h.CALUHardwareManagerThread()
+    # hardwareHandlerThread.daemon = True
+
 
     # Public facing HTTP control.
     #* this can be set to False to deny service while the server is updating. 
@@ -31,7 +38,8 @@ def main():
 
     # run threads
     serverRequestThread.start()
-    # emailSendingThread.start()
+    # hardwareHandlerThread.start()
+    # webScrapingThread.start()
     
     # Keeps main alive (no rogue threads on exit)
     try:
