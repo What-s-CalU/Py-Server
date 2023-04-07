@@ -7,16 +7,11 @@
 import http.server
 import handlers.json_handler      as     json_h
 import handlers.sql_handler       as     sql_h
+import handlers.json_handler      as     util_h
 import global_values              as     glob
 from   handlers.email_handler     import send_email
 import time
 import random, string
-from   http_handler_util          import get_category_id
-from   http_handler_util          import get_user_id
-from   http_handler_util          import insert_new_category
-from   http_handler_util          import insert_new_event
-from   http_handler_util          import insert_new_user_category_subscription
-
 #
 # Utility functions used by the parse handler that are -technically- agnostic of the handler.
 #
@@ -139,24 +134,24 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
             client_data["username"] = client_data["username"].upper()
 
             # Get user_id from USERS table
-            user_id = get_user_id(client_data["username"])
+            user_id = util_h.get_user_id(client_data["username"])
             if user_id is None:
                 self.set_response_header(400, 'User not found')
                 return
 
             # Get category_id from CATEGORIES table
-            category_id = get_category_id(client_data["category"], user_id)
+            category_id = util_h.get_category_id(client_data["category"], user_id)
 
             if category_id is None:
                 # Insert new category and get the category_id
-                insert_new_category(client_data["category"], user_id)
-                category_id = get_category_id(client_data["category"], user_id)
+                util_h.insert_new_category(client_data["category"], user_id)
+                category_id = util_h.get_category_id(client_data["category"], user_id)
 
                 # Insert new user category subscription
-                insert_new_user_category_subscription(user_id, category_id)
+                util_h.insert_new_user_category_subscription(user_id, category_id)
 
             # Insert the custom event into the EVENTS table
-            insert_new_event(
+            util_h.insert_new_event(
                 client_data['start_time'],
                 client_data['end_time'],
                 client_data['title'],
