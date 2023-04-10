@@ -22,11 +22,11 @@ def main():
     # startup code here ...
     
     # Make threads
-    serverRequestThread = serv_h.CALUServerhandlerThread()
-    serverRequestThread.daemon = True
+    # serverRequestThread = serv_h.CALUServerhandlerThread()
+    # serverRequestThread.daemon = True
     
-    # webScrapingThread  = scrape_h.CALUWebScraperThread()
-    # webScrapingThread.daemon = True
+    webScrapingThread  = scrape_h.CALUWebScraperThread()
+    webScrapingThread.daemon = True
     
     # hardwareHandlerThread = hardware_h.CALUHardwareManagerThread()
     # hardwareHandlerThread.daemon = True
@@ -35,11 +35,12 @@ def main():
     # Public facing HTTP control.
     #* this can be set to False to deny service while the server is updating. 
     glob.SERVER_IS_UP = True
+    glob.SCRAPER_UP   = True
 
     # run threads
-    serverRequestThread.start()
+    # serverRequestThread.start()
     # hardwareHandlerThread.start()
-    # webScrapingThread.start()
+    webScrapingThread.start()
     
     # Keeps main alive (no rogue threads on exit)
     try:

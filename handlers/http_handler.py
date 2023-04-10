@@ -29,8 +29,8 @@ def generate_checksum(length:int):
 
 
 # returns a GET http response from a website.
-def do_GET_from_url(url:str, port:int=80):
-    client_connection: http.client.HTTPSConnection = http.client.HTTPSConnection(host=url, port=port)
+def do_GET_from_url(url:str, port:int):
+    client_connection = http.client.HTTPSConnection(host=url, port=port)
     client_connection.request("GET", url)
     client_connection_response = client_connection.getresponse()
     client_connection.close()
