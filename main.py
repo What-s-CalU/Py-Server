@@ -22,8 +22,8 @@ def main():
     # startup code here ...
     
     # Make threads
-    # serverRequestThread = serv_h.CALUServerhandlerThread()
-    # serverRequestThread.daemon = True
+    serverRequestThread = serv_h.CALUServerhandlerThread()
+    serverRequestThread.daemon = True
     
     webScrapingThread  = scrape_h.CALUWebScraperThread()
     webScrapingThread.daemon = True
@@ -38,9 +38,9 @@ def main():
     glob.SCRAPER_UP   = True
 
     # run threads
-    # serverRequestThread.start()
-    # hardwareHandlerThread.start()
+    serverRequestThread.start()
     webScrapingThread.start()
+    # hardwareHandlerThread.start()
     
     # Keeps main alive (no rogue threads on exit)
     try:

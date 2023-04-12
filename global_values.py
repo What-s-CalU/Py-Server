@@ -3,4 +3,7 @@ SERVER_PORT_NUMBER  = 80
 SERVER_IS_UP        = False
 SCRAPER_UP          = False
 
+NOTIFICATION_MESSAGE = "No new notifications..."
+NOTIFICATION_COUNT   = 0
+NOTIFICATION_CODE    = 200
 

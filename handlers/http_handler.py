@@ -73,7 +73,7 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
     # Sends a templated http response constructed in do_POST().
     def do_ANY_send_response(self, code: int, message: str, data: str):
         # Try to update the display with the latest http serve message. 
-        thread_h.update_notifications("Served HTTP Response: \"%s\", Code: %i.".format(message, code), True)
+        thread_h.update_notifications("Served HTTP Response: \"%s\", Code: %i.".format(message, code), code, True)
 
         # Write the server response. 
         self.send_response(code, message)
@@ -351,7 +351,7 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
                         (client_data["username"], client_checksum, client_time))
 
                     # For console logs; printed alongside email query.
-                    print(client_data['username']+"@pennwest.edu" + " registered with checksum: " + client_checksum + ".\n")
+                    print(client_data['username']+"@pennwest.edu" + " reset with checksum: " + client_checksum + ".\n")
                     send_email(
                             client_data['username']+"@pennwest.edu",
                             "Your What's@Calu Password Reset Code",
