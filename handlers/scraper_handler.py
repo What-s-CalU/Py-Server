@@ -21,7 +21,7 @@ class CALUWebScraperThread(threading.Thread):
             if(glob.SCRAPER_UP):
                 # constant URL for this webscraper. This is could be a constant, but is rather bare where it is. 
                 url:    str = "http://calu.edu/news/announcements/"
-                response = requests.get(url)
+                response = requests.get(url, timeout=(10, 10))
 
                 # Check to see if the response is valid. 
                 if(response.status_code == 200):
@@ -32,6 +32,8 @@ class CALUWebScraperThread(threading.Thread):
 
                     # find the event name and event(s) of each dropdown
                     for event in events:
+                        print(event)
+                        '''
                         i = 0
                         event_data = event.find('td')
                         
@@ -48,6 +50,6 @@ class CALUWebScraperThread(threading.Thread):
                                 thread_h.s_print("Unexpected Value.")
                                 # copy the person who wrote it (or map them to an event category???
                             # increment for context. 
-                            i+=1
+                            i+=1'''
                 print("Scraped Successfully.")
                 glob.SCRAPER_UP = False
