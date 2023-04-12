@@ -17,39 +17,30 @@ import requests
 # webscraper's tasks as a thread (which can be ran/released periodically via main)
 class CALUWebScraperThread(threading.Thread):
     def run(self):
-        while(True):
-            if(glob.SCRAPER_UP):
-                # constant URL for this webscraper. This is could be a constant, but is rather bare where it is. 
-                url:    str = "http://calu.edu/news/announcements/"
-                response = requests.get(url, timeout=(10, 10))
+        while True:
+            if glob.SCRAPER_UP:
+                url = "http://calu.edu/news/announcements/"
+                response = requests.get(url)
 
-                # Check to see if the response is valid. 
-                if(response.status_code == 200):
-                    # parse response into chunks for analysis.
+                if response.status_code == 200:
                     response_parsed = BeautifulSoup(str(response.text), 'html.parser')
-                    events          = response_parsed.find('tr')
+                    events = response_parsed.find_all('tr')
 
+                    if events != None:
+                        for event in events:
+                            i = 0
+                            event_data = event.find_all('td')
 
-                    # find the event name and event(s) of each dropdown
-                    for event in events:
-                        print(event)
-                        '''
-                        i = 0
-                        event_data = event.find('td')
-                        
-                        for data in event_data:
-                            if(i == 0):
-                                thread_h.s_print(data)
-                                # copy the name
-                            elif(i==1):
-                                # resolve the description via another function
-                                thread_h.s_print(data)
-                            elif(i==2):
-                                thread_h.s_print(data)
-                            else:
-                                thread_h.s_print("Unexpected Value.")
-                                # copy the person who wrote it (or map them to an event category???
-                            # increment for context. 
-                            i+=1'''
+                            if event_data != None:
+                                for data in event_data:
+                                    if i == 0:
+                                        thread_h.s_print(data)
+                                    elif i == 1:
+                                        thread_h.s_print(data)
+                                    elif i == 2:
+                                        thread_h.s_print(data)
+                                    else:
+                                        thread_h.s_print("Unexpected Value.")
+                                    i += 1
                 print("Scraped Successfully.")
                 glob.SCRAPER_UP = False
