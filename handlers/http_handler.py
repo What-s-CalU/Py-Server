@@ -125,7 +125,17 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
             # send user events
             elif(client_data['request_type'] == "get_user_subscribed_events"):
                  self.do_POST_get_user_subscribed_events(client_data)
+
+            # send category names and subscribe status
+            elif(client_data['request_type'] == "get_calu_category_names"):
+                 self.do_POST_get_calu_category_names(client_data)
+
+            #update category subscription
+            elif(client_data['request_type'] == "update_calu_category_subscription"):
+                 self.do_POST_update_calu_category_subscription(client_data)   
             
+            elif(client_data['request_type'] == "get_calu_category_events"):
+                 self.do_POST_get_calu_category_events(client_data)
             # catchall
             else:
                 self.set_response_header(506, "Not Acceptable")
@@ -136,6 +146,50 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
         
         # construct the server's response to the client. 
         self.do_ANY_send_response(self.dopost_code, self.dopost_message, self.dopost_data)
+    
+    def do_POST_get_calu_category_events(self, client_data):
+        category_events = util_h.get_calu_category_events(client_data["category_name"])
+        self.dopost_data = json_h.json_dump_string(category_events)
+        print(self.dopost_data)
+        self.set_response_header(200, "OK")
+
+
+    def do_POST_update_calu_category_subscription(self, client_data):
+        client_data["username"] = client_data["username"].upper()
+        # Get user_id from USERS table
+        user_id = util_h.get_user_id(client_data["username"])
+        if user_id is None:
+            self.set_response_header(400, 'User not found')
+            return
+        
+        # Get category_id from CATEGORIES table
+        category_id = util_h.get_category_id(client_data["category_name"], None)
+
+        if(client_data["is_subscribed"] == 1):
+        # Insert new user category subscription
+            util_h.insert_new_user_category_subscription(user_id, category_id)
+        if(client_data["is_subscribed"] == 0):
+            util_h.delete_user_category_subscription(user_id, category_id)
+
+        self.set_response_header(200, "OK")
+
+    def do_POST_get_calu_category_names(self, client_data):
+        client_data["username"] = client_data["username"].upper()
+
+        # Get user_id from USERS table
+        user_id = util_h.get_user_id(client_data["username"])
+        if user_id is None:
+            self.set_response_header(400, 'User not found')
+            return
+
+        # Get the list of categories with null user_id
+        categories_data = util_h.get_categories_with_subscription_status(user_id)
+
+        # Convert the list of categories to a JSON string and put it in post data
+        self.dopost_data = json_h.json_dump_string(categories_data)
+
+        self.set_response_header(200, "OK")
+
 
     # Handles requests for all events users a subscribe to
     def do_POST_get_user_subscribed_events(self, client_data):
@@ -152,7 +206,7 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
 
         # Convert the list of events to a JSON string and put it in post data
         self.dopost_data = json_h.json_dump_string(user_subscribed_events)
-
+        print(self.dopost_data)
         self.set_response_header(200, "OK")
 
 

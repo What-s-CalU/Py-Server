@@ -49,8 +49,8 @@ def main():
     try:
         while True:
             # loop through the databases for logged in users, reset passwords, etc. This function deletes expired entries. 
-            manage_timesheet("SELECT NAME AND TIME FROM SIGNUP","DELETE FROM SIGNUP WHERE NAME IS ? AND TIME IS ?")
-            manage_timesheet("SELECT NAME AND TIME FROM RESET","DELETE FROM RESET WHERE NAME IS ? AND TIME IS ?")
+            # manage_timesheet("SELECT NAME AND TIME FROM SIGNUP","DELETE FROM SIGNUP WHERE NAME IS ? AND TIME IS ?")
+            # manage_timesheet("SELECT NAME AND TIME FROM RESET","DELETE FROM RESET WHERE NAME IS ? AND TIME IS ?")
 
             time.sleep(1)
     except KeyboardInterrupt:
