@@ -152,6 +152,8 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
         # construct the server's response to the client. 
         self.do_ANY_send_response(self.dopost_code, self.dopost_message, self.dopost_data)
     
+
+
     def do_POST_get_calu_category_events(self, client_data):
         category_events = util_h.get_calu_category_events(client_data["category_name"])
         self.dopost_data = json_h.json_dump_string(category_events)
@@ -177,6 +179,7 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
             util_h.delete_user_category_subscription(user_id, category_id)
 
         self.set_response_header(200, "OK")
+
 
     def do_POST_get_calu_category_names(self, client_data):
         client_data["username"] = client_data["username"].upper()
@@ -215,8 +218,6 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
         self.set_response_header(200, "OK")
 
 
-
-    
     # Handles requests to add a user created event
     def do_POST_add_custom_event(self, client_data):
             client_data["username"] = client_data["username"].upper()
@@ -252,8 +253,6 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
             )
 
             self.set_response_header(200, "OK")
-
-
 
 
     # Handles requests for a user to sign into the application.
@@ -304,7 +303,7 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
                     client_checksum: str = generate_checksum(10)
 
                     # seconds since epoch, easy to parse. 
-                    client_time:     int = time.time()
+                    client_time:     str = str(time.time())
                     
                     # actually insert the time. 
                     # format taken from https://www.sqlitetutorial.net/sqlite-python/insert/
@@ -400,7 +399,7 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
                     client_checksum: str = generate_checksum(10)
 
                     # seconds since epoch, easy to parse. 
-                    client_time:     int = time.time()
+                    client_time:     str = str(time.time())
                     
                     # actually insert the time. 
                     # format taken from https://www.sqlitetutorial.net/sqlite-python/insert/

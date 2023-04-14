@@ -8,7 +8,7 @@ import threading
 from bs4 import BeautifulSoup
 import requests
 import datetime
-import dateparser
+# import dateparser
 
 import handlers.http_handler      as http_h
 import handlers.threading_handler as thread_h 

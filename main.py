@@ -11,11 +11,14 @@ import global_values            as glob
 import handlers.http_handler      as http_h
 import handlers.http_handler_util as http_util_h
 
-import handlers.json_handler    as json_h
-import handlers.server_handler  as serv_h
-import handlers.email_handler   as email_h
-import handlers.sql_handler     as sql_h
-import handlers.scraper_handler as scrape_h
+import handlers.json_handler     as json_h
+import handlers.server_handler   as serv_h
+import handlers.email_handler    as email_h
+import handlers.sql_handler      as sql_h
+import handlers.scraper_handler  as scrape_h
+
+import handlers.hardware_handler as hardware_h
+
 import http
 import time
 
