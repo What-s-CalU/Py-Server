@@ -31,7 +31,8 @@ class CALUWebScraperThread(threading.Thread):
 
         event_time:  str = ""
 
-
+        # Runs while the scraper is up.
+        # The thread is always running, which allows us to start glob.SCRAPER_UP up arbitrarily. 
         while True:
             if glob.SCRAPER_UP:
                 url = "http://calu.edu/news/announcements/"
@@ -53,7 +54,12 @@ class CALUWebScraperThread(threading.Thread):
                                     if i == 0:
                                         event_time  = data.get_text()
                                         print(event_time)
+
+                                        # fallback date. 
                                         event_start = datetime.datetime.fromisoformat(event_time)
+                                        event_start.hour   = 0
+                                        event_start.minute = 0
+                                        event_start.second = 0
 
                                     # description and time start parsing (time end is midnight for all events with a start time)
                                     elif i == 1:
@@ -68,7 +74,7 @@ class CALUWebScraperThread(threading.Thread):
                                             j = 0
                                             for data_line in data_body:
                                                 if(j >= 5):
-                                                        date_parsed = dateparser.parse(data_line)
+                                                        # date_parsed = dateparser.parse(data_line)
                                                         # print(date_parsed)
                                                         event_desc = event_desc + data_line + "\n"
                                                 else:
@@ -85,6 +91,12 @@ class CALUWebScraperThread(threading.Thread):
                                     i += 1
                                 
                                 # add event via insert or ignore.
-                                # http_util_h.insert_new_event(start_time, end_time, event_name, color, event_desc, category_id, False, None, 0)
+                                event_end = event_start
+                                event_start.hour   = 24
+                                event_start.minute = 0
+                                event_start.second = 0
+                                http_util_h.insert_new_event(str(event_start.isoformat()), str(end_time.isoformat()), event_name, color, event_desc, category_id, False, None, 0)
+                                # send an http update??? The client could just do this via a refresh button and automatic refreshing; I'm not sure if http allows us to just 
+                                # send data like that without a thread constantly listening like this server does on every client. 
                 print("Scraped Successfully.")
                 glob.SCRAPER_UP = False
