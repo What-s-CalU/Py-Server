@@ -118,18 +118,23 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
             elif(client_data['request_type'] == "reset_end"):
                 self.do_POST_reset_end(client_data)
 
+
+            # make custom events
             # add event
             elif(client_data['request_type'] == "add_custom_event"):
                  self.do_POST_add_custom_event(client_data)
 
-            # send user events
+
+            # get events
+            # send user events to the client.
             elif(client_data['request_type'] == "get_user_subscribed_events"):
                  self.do_POST_get_user_subscribed_events(client_data)
-
             # send category names and subscribe status
             elif(client_data['request_type'] == "get_calu_category_names"):
                  self.do_POST_get_calu_category_names(client_data)
 
+
+            # get calu events
             #update category subscription
             elif(client_data['request_type'] == "update_calu_category_subscription"):
                  self.do_POST_update_calu_category_subscription(client_data)   
