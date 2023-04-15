@@ -26,8 +26,8 @@ class CALUWebScraperThread(threading.Thread):
         event_desc:  str = ""
         
         # time value fields 
-        event_start: datetime.datetime
-        event_end:   datetime.datetime
+        event_start: datetime.datetime = datetime.datetime(2000,1,1)
+        event_end:   datetime.datetime = datetime.datetime(2000,1,1)
 
         event_time:  str = ""
 
@@ -57,9 +57,11 @@ class CALUWebScraperThread(threading.Thread):
 
                                         # fallback date. 
                                         event_start = datetime.datetime.fromisoformat(event_time)
-                                        event_start.hour   = 0
-                                        event_start.minute = 0
-                                        event_start.second = 0
+                                        event_start = datetime.datetime(event_start.year, event_start.month, event_start.day, hour=0,minute=0,second=0)
+
+                                        event_end   = datetime.datetime.fromisoformat(event_time)
+                                        event_end   = datetime.datetime(event_start.year, event_start.month, event_start.day, hour=23,minute=59,second=0)
+                                        
 
                                     # description and time start parsing (time end is midnight for all events with a start time)
                                     elif i == 1:
@@ -91,11 +93,11 @@ class CALUWebScraperThread(threading.Thread):
                                     i += 1
                                 
                                 # add event via insert or ignore.
-                                event_end = event_start
-                                event_start.hour   = 24
-                                event_start.minute = 0
-                                event_start.second = 0
-                                http_util_h.insert_new_event(str(event_start.isoformat()), str(end_time.isoformat()), event_name, color, event_desc, category_id, False, None, 0)
+                                #event_end = event_start
+                                #event_start.hour   = 24
+                                #event_start.minute = 0
+                                #event_start.second = 0
+                                #http_util_h.insert_new_event(str(event_start.isoformat()), str(end_time.isoformat()), event_name, color, event_desc, category_id, False, None, 0)
                                 # send an http update??? The client could just do this via a refresh button and automatic refreshing; I'm not sure if http allows us to just 
                                 # send data like that without a thread constantly listening like this server does on every client. 
                 print("Scraped Successfully.")

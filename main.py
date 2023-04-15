@@ -17,7 +17,7 @@ import handlers.email_handler    as email_h
 import handlers.sql_handler      as sql_h
 import handlers.scraper_handler  as scrape_h
 
-import handlers.hardware_handler as hardware_h
+# import handlers.hardware_handler as hardware_h
 
 import http
 import time
@@ -34,8 +34,8 @@ def main():
     webScrapingThread  = scrape_h.CALUWebScraperThread()
     webScrapingThread.daemon = True
     
-    hardwareHandlerThread = hardware_h.CALUHardwareManagerThread()
-    hardwareHandlerThread.daemon = True
+    # hardwareHandlerThread = hardware_h.CALUHardwareManagerThread()
+    # hardwareHandlerThread.daemon = True
 
 
     # Public facing HTTP control.
@@ -46,7 +46,7 @@ def main():
     # run threads
     serverRequestThread.start()
     webScrapingThread.start()
-    hardwareHandlerThread.start()
+    # hardwareHandlerThread.start()
     
     # Keeps main alive (no rogue threads on exit)
     try:
@@ -64,8 +64,9 @@ def manage_timesheet(get_query:str, delete_query:str, timeout:int=240):
             "database/root.db",
             get_query,
             ())
-        current = userdata_query_signup.fetchone()
-        flipflop = False
+        current = userdata_query_signup.fetchall()
+        print(current)
+        """flipflop = False
         while(current != None):
 
             # grabs entries from the shared results. 
@@ -79,7 +80,7 @@ def manage_timesheet(get_query:str, delete_query:str, timeout:int=240):
                 "database/root.db",
                 delete_query,
                 (name, time))
-            current = userdata_query_signup.fetchone()
+            current = userdata_query_signup.fetchone()"""
 
 # autoruns main. 
 if __name__ == "__main__":

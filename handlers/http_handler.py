@@ -132,16 +132,26 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
             # send category names and subscribe status
             elif(client_data['request_type'] == "get_calu_category_names"):
                  self.do_POST_get_calu_category_names(client_data)
+            # delete a users event
+            elif (client_data['request_type'] == "delete_event"):
+                self.do_POST_delete_user_event(client_data)
 
 
             # get calu events
             #update category subscription
             elif(client_data['request_type'] == "update_calu_category_subscription"):
                  self.do_POST_update_calu_category_subscription(client_data)   
-            
-            elif(client_data['request_type'] == "get_calu_category_events"):
-                 self.do_POST_get_calu_category_events(client_data)
+            # get events for calu category
+            elif (client_data['request_type'] == "get_calu_category_events"):
+                self.do_POST_get_calu_category_events(client_data)
             # catchall
+
+            #categories
+            elif(client_data['request_type'] == "get_user_subscribed_categories"):
+                 self.do_POST_get_user_subscribed_categories(client_data) 
+            elif(client_data['request_type'] == "add_category"):
+                 self.do_POST_insert_category(client_data) 
+                
             else:
                 self.set_response_header(506, "Not Acceptable")
         # catchall for no service. 
@@ -151,11 +161,60 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
         
         # construct the server's response to the client. 
         self.do_ANY_send_response(self.dopost_code, self.dopost_message, self.dopost_data)
+
+        
+
+    def do_POST_insert_category(self, client_data):
+        client_data["username"] = client_data["username"].upper()
+
+        # Get user_id from USERS table
+        user_id = util_h.get_user_id(client_data["username"])
+        if user_id is None:
+            self.set_response_header(400, 'User not found')
+            return
+
+        # Insert the new category into the CATEGORIES table
+        category_id = util_h.insert_new_category(
+            user_id,
+            client_data['color'],
+            client_data['category_name']
+        )
+        
+        util_h.insert_new_user_category_subscription(
+            user_id,
+            category_id
+        )
+
+        self.dopost_data = json_h.json_dump_string({"category_id": category_id})
+        self.set_response_header(200, "OK")
+
+    def do_POST_get_user_subscribed_categories(self, client_data):
+        client_data["username"] = client_data["username"].upper()
+
+        # Get user_id from USERS table
+        user_id = util_h.get_user_id(client_data["username"])
+        if user_id is None:
+            self.set_response_header(400, 'User not found')
+            return
+
+        # Get user-subscribed categories
+        user_subscribed_categories = util_h.get_user_subscribed_categories(user_id)
+        self.dopost_data = json_h.json_dump_string(user_subscribed_categories)
+        print(self.dopost_data)
+        self.set_response_header(200, "OK")
+
+
+
+    def do_POST_delete_user_event(self, client_data):
+        util_h.delete_user_event(
+            client_data['event_id']
+        )
+
+        self.set_response_header(200, "OK")
+
     
-
-
     def do_POST_get_calu_category_events(self, client_data):
-        category_events = util_h.get_calu_category_events(client_data["category_name"])
+        category_events = util_h.get_calu_category_events(client_data["category_id"])
         self.dopost_data = json_h.json_dump_string(category_events)
         print(self.dopost_data)
         self.set_response_header(200, "OK")
@@ -169,8 +228,7 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
             self.set_response_header(400, 'User not found')
             return
         
-        # Get category_id from CATEGORIES table
-        category_id = util_h.get_category_id(client_data["category_name"], None)
+        category_id = client_data["category_id"]
 
         if(client_data["is_subscribed"] == 1):
         # Insert new user category subscription
@@ -179,7 +237,6 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
             util_h.delete_user_category_subscription(user_id, category_id)
 
         self.set_response_header(200, "OK")
-
 
     def do_POST_get_calu_category_names(self, client_data):
         client_data["username"] = client_data["username"].upper()
@@ -218,41 +275,40 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
         self.set_response_header(200, "OK")
 
 
+
+    
     # Handles requests to add a user created event
     def do_POST_add_custom_event(self, client_data):
-            client_data["username"] = client_data["username"].upper()
+        client_data["username"] = client_data["username"].upper()
 
-            # Get user_id from USERS table
-            user_id = util_h.get_user_id(client_data["username"])
-            if user_id is None:
-                self.set_response_header(400, 'User not found')
-                return
+        # Get user_id from USERS table
+        user_id = util_h.get_user_id(client_data["username"])
+        if user_id is None:
+            self.set_response_header(400, 'User not found')
+            return
 
-            # Get category_id from CATEGORIES table
-            category_id = util_h.get_category_id(client_data["category"], user_id)
+        # Get category_id from CATEGORIES table
+        category_id = client_data["categoryID"]
 
-            if category_id is None:
-                # Insert new category and get the category_id
-                util_h.insert_new_category(client_data["category"], user_id)
-                category_id = util_h.get_category_id(client_data["category"], user_id)
+        if category_id is None:
+            self.set_response_header(400, 'Category ID not provided')
+            return
 
-                # Insert new user category subscription
-                util_h.insert_new_user_category_subscription(user_id, category_id)
+        # Insert the custom event into the EVENTS table
+        event_id = util_h.insert_new_event(
+            client_data['start_time'],
+            client_data['end_time'],
+            client_data['title'],
+            client_data['description'],
+            category_id,
+            client_data['isCustom'],
+            user_id,
+            None
+        )
+        self.dopost_data = json_h.json_dump_string(event_id)
+        self.set_response_header(200, "OK")
 
-            # Insert the custom event into the EVENTS table
-            util_h.insert_new_event(
-                client_data['start_time'],
-                client_data['end_time'],
-                client_data['title'],
-                client_data['color'],
-                client_data['description'],
-                category_id,
-                client_data['isCustom'],
-                user_id,
-                None
-            )
 
-            self.set_response_header(200, "OK")
 
 
     # Handles requests for a user to sign into the application.
@@ -303,7 +359,7 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
                     client_checksum: str = generate_checksum(10)
 
                     # seconds since epoch, easy to parse. 
-                    client_time:     str = str(time.time())
+                    client_time:     int = time.time()
                     
                     # actually insert the time. 
                     # format taken from https://www.sqlitetutorial.net/sqlite-python/insert/
@@ -399,7 +455,7 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
                     client_checksum: str = generate_checksum(10)
 
                     # seconds since epoch, easy to parse. 
-                    client_time:     str = str(time.time())
+                    client_time:     int = time.time()
                     
                     # actually insert the time. 
                     # format taken from https://www.sqlitetutorial.net/sqlite-python/insert/

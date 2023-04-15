@@ -33,27 +33,9 @@ def get_category_id(category, user_id):
     else:
         return category_id_result[0]
 
-# takes a string paramater and a user_id integer and inserts a new category associated with a user_id into the categories table
-def insert_new_category(category, user_id):
-    sql_h.sql_execute_safe_insert(
-        "database/root.db",
-        """
-        INSERT INTO CATEGORIES 
-        (
-            NAME,
-            USER_ID
-        ) 
-        VALUES 
-        (
-            ?,
-            ?
-        )
-        """,
-        (category, user_id)
-    )
-
 # takes a user_id integer paramater and a category_id integer paramater and inserts a subcription into the user_Category_sbuscription table
 def insert_new_user_category_subscription(user_id, category_id):
+    print(f"user_id: {user_id}, category_id: {category_id}")
     sql_h.sql_execute_safe_insert(
         "database/root.db",
         """
@@ -72,6 +54,7 @@ def insert_new_user_category_subscription(user_id, category_id):
             category_id
         )
     )
+
 def delete_user_category_subscription(user_id, category_id):
     sql_h.sql_execute_safe_insert(
         "database/root.db",
@@ -87,8 +70,22 @@ def delete_user_category_subscription(user_id, category_id):
         )
     )
 
+
+def delete_user_event(event_id):
+    sql_h.sql_execute_safe_insert(
+        "database/root.db",
+        """
+        DELETE FROM EVENTS
+        WHERE
+            ID = ?,
+        """,
+        (
+           event_id
+        )
+    )
+    
 # function to insert a new event into the database
-def insert_new_event(start_time, end_time, title, color, description, category_id, is_custom, user_id, flag):
+def insert_new_event(start_time, end_time, title, description, category_id, is_custom, user_id, flag):
     sql_h.sql_execute_safe_insert(
         "database/root.db",
         """
@@ -97,7 +94,6 @@ def insert_new_event(start_time, end_time, title, color, description, category_i
             START_TIME, 
             END_TIME, 
             TITLE, 
-            COLOR, 
             DESCRIPTION, 
             CATEGORY_ID, 
             IS_CUSTOM, 
@@ -113,14 +109,12 @@ def insert_new_event(start_time, end_time, title, color, description, category_i
             ?, 
             ?, 
             ?, 
-            ?, 
             ?
         )""",
         (
             start_time,
             end_time,
             title,
-            color,
             description,
             category_id,
             is_custom,
@@ -129,19 +123,91 @@ def insert_new_event(start_time, end_time, title, color, description, category_i
         )
     )
 
+    event_id_query = sql_h.sql_execute_safe_search(
+        "database/root.db",
+        """
+        SELECT ID
+        FROM EVENTS
+        WHERE START_TIME = ? AND
+              END_TIME = ? AND
+              TITLE = ? AND
+              DESCRIPTION = ? AND
+              CATEGORY_ID = ? AND
+              IS_CUSTOM = ? AND
+              USER_ID = ?
+        """,
+        (
+            start_time,
+            end_time,
+            title,
+            description,
+            category_id,
+            is_custom,
+            user_id
+        )
+    )
+
+    event_id_result = event_id_query.fetchone()
+    print(event_id_result)
+    return {'ID': event_id_result[0]}
+
+
+def insert_new_category(user_id, color, name):
+    sql_h.sql_execute_safe_insert(
+        "database/root.db",
+        """
+        INSERT INTO CATEGORIES 
+        (
+            USER_ID, 
+            COLOR, 
+            NAME
+        )
+        VALUES 
+        (
+            ?,
+            ?, 
+            ?
+        )""",
+        (
+            user_id,
+            color,
+            name
+        )
+    )
+
+    category_id_query = sql_h.sql_execute_safe_search(
+        "database/root.db",
+        """
+        SELECT ID
+        FROM CATEGORIES
+        WHERE USER_ID = ? AND
+              COLOR = ? AND
+              NAME = ?
+        """,
+        (
+            user_id,
+            color,
+            name
+        )
+    )
+
+    category_id = category_id_query.fetchone()[0]
+    return category_id
+
 # function which returns a list of dicts of events user is subscribed to
 def get_user_subscribed_events(user_id):
     # Fetch events from the database
     events_query = sql_h.sql_execute_safe_search(
         "database/root.db",
         """
-        SELECT EVENTS.START_TIME as start_time,
+        SELECT EVENTS.ID as id,
+               EVENTS.START_TIME as start_time,
                EVENTS.END_TIME as end_time,
                EVENTS.TITLE as title,
-               EVENTS.COLOR as color,
                EVENTS.DESCRIPTION as description,
-               CATEGORIES.NAME AS category,
-               EVENTS.IS_CUSTOM as isCustom
+               CATEGORIES.ID AS categoryID,
+               EVENTS.IS_CUSTOM as isCustom,
+               EVENTS.FLAG as flag
         FROM EVENTS
         JOIN USER_CATEGORY_SUBSCRIPTIONS ON EVENTS.CATEGORY_ID = USER_CATEGORY_SUBSCRIPTIONS.CATEGORY_ID
         JOIN CATEGORIES ON EVENTS.CATEGORY_ID = CATEGORIES.ID
@@ -156,53 +222,68 @@ def get_user_subscribed_events(user_id):
 
     return events
 
-def get_categories_with_subscription_status(user_id):
-    # Get categories with null user_id
-    null_user_categories_query = '''
-        SELECT ID, NAME
+def get_user_subscribed_categories(user_id):
+    # Fetch categories from the database
+    categories_query = sql_h.sql_execute_safe_search(
+        "database/root.db",
+        """
+        SELECT CATEGORIES.ID as id,
+               CATEGORIES.NAME as name,
+               CATEGORIES.COLOR as color,
+               CATEGORIES.USER_ID as user_id
         FROM CATEGORIES
-        WHERE USER_ID IS NULL
-    '''
-    null_user_categories_result = sql_h.sql_execute_safe_search("database/root.db", null_user_categories_query, ()).fetchall()
+        JOIN USER_CATEGORY_SUBSCRIPTIONS ON CATEGORIES.ID = USER_CATEGORY_SUBSCRIPTIONS.CATEGORY_ID
+        WHERE USER_CATEGORY_SUBSCRIPTIONS.USER_ID = ?
+        """,
+        (user_id,)
+    )
+    categories_result = categories_query.fetchall()
+    print(categories_result)
+    # Convert the result to a list of dicts
+    categories = query_result_to_dict_list(categories_result, categories_query.description)
 
-    # Get the user's subscribed categories
-    subscribed_categories_query = '''
-        SELECT CATEGORY_ID
-        FROM USER_CATEGORY_SUBSCRIPTIONS
-        WHERE USER_ID = ?
-    '''
-    subscribed_categories_result = sql_h.sql_execute_safe_search("database/root.db", subscribed_categories_query, (user_id,)).fetchall()
+    return categories
 
-    # Convert the results to sets for easier processing
-    null_user_categories = {(row[0], row[1]) for row in null_user_categories_result}
-    subscribed_category_ids = {row[0] for row in subscribed_categories_result}
+def get_categories_with_subscription_status(user_id):
+    # Get categories with null user_id and their subscription status
+    categories_query = sql_h.sql_execute_safe_search(
+         "database/root.db",
+        """
+        SELECT  C.ID as id,
+                C.NAME as name,
+                C.COLOR as color,
+                C.USER_ID as user_id,
+               CASE WHEN UCS.CATEGORY_ID IS NOT NULL THEN 1 ELSE 0 END AS is_subscribed
+        FROM CATEGORIES C
+        LEFT JOIN USER_CATEGORY_SUBSCRIPTIONS UCS ON C.ID = UCS.CATEGORY_ID AND UCS.USER_ID = ?
+        WHERE C.USER_ID IS NULL
+        """,
+        (user_id,)
+    )
+    categories_result = categories_query.fetchall()
 
-    # Process the results to create the final list of categories with subscription status
-    categories_data = []
-    for category_id, category_name in null_user_categories:
-        is_subscribed = int(category_id in subscribed_category_ids)
-        categories_data.append({'id': category_id, 'name': category_name, 'is_subscribed': is_subscribed})
+    categories = query_result_to_dict_list(categories_result, categories_query.description)
 
-    print(categories_data)
-    return categories_data
+    print(categories)
+    return categories
 
-def get_calu_category_events(category_name):
+def get_calu_category_events(category_id):
     # Fetch events from the database
     events_query = sql_h.sql_execute_safe_search(
         "database/root.db",
         """
-        SELECT EVENTS.START_TIME as start_time,
+        SELECT EVENTS.ID as id,
+               EVENTS.START_TIME as start_time,
                EVENTS.END_TIME as end_time,
                EVENTS.TITLE as title,
-               EVENTS.COLOR as color,
                EVENTS.DESCRIPTION as description,
-               CATEGORIES.NAME AS category,
-               EVENTS.IS_CUSTOM as isCustom
+               EVENTS.CATEGORY_ID AS categoryID,
+               EVENTS.IS_CUSTOM as isCustom,
+               EVENTS.FLAG as flag
         FROM EVENTS
-        JOIN CATEGORIES ON EVENTS.CATEGORY_ID = CATEGORIES.ID
-        WHERE EVENTS.IS_CUSTOM = 0 AND CATEGORIES.NAME = ?
+        WHERE EVENTS.CATEGORY_ID = ?
         """,
-        (category_name,)
+        (category_id,)
     )
     events_result = events_query.fetchall()
     print(events_result)
