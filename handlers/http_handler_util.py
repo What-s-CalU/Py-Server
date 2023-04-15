@@ -152,6 +152,67 @@ def insert_new_event(start_time, end_time, title, description, category_id, is_c
     return {'ID': event_id_result[0]}
 
 
+ 
+# function to insert a new event into the database
+def edit_event(start_time, end_time, title, description, category_id, is_custom, user_id, flag, event_id):
+    
+    
+    sql_h.sql_execute_safe_insert(
+        "database/root.db",
+        """
+        UPDATE EVENTS SET
+            START_TIME=?,
+            END_TIME=?,
+            TITLE=?,
+            DESCRIPTION=?,
+            CATEGORY_ID=?,
+            IS_CUSTOM=?,
+            USER_ID=?,
+            FLAG=?
+            WHERE ID=?""",
+        (
+            start_time,
+            end_time,
+            title,
+            description,
+            category_id,
+            is_custom,
+            user_id,
+            flag,
+            event_id
+        )
+    )
+
+    event_id_query = sql_h.sql_execute_safe_search(
+        "database/root.db",
+        """
+        SELECT ID
+        FROM EVENTS
+        WHERE START_TIME = ? AND
+              END_TIME = ? AND
+              TITLE = ? AND
+              DESCRIPTION = ? AND
+              CATEGORY_ID = ? AND
+              IS_CUSTOM = ? AND
+              USER_ID = ?
+        """,
+        (
+            start_time,
+            end_time,
+            title,
+            description,
+            category_id,
+            is_custom,
+            user_id
+        )
+    )
+
+    event_id_result = event_id_query.fetchone()
+    print(event_id_result)
+    return {'ID': event_id_result[0]}
+
+
+
 def insert_new_category(user_id, color, name):
     sql_h.sql_execute_safe_insert(
         "database/root.db",
