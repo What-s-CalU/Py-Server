@@ -191,6 +191,10 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
 
                 elif(client_data['request_type'] == "signout"):
                     self.do_POST_signout(client_data)
+
+                #edit event
+                elif client_data['request_type'] == "edit_event":
+                    self.do_POST_edit_event(client_data)
                     
             else:
                 if(has_requested == False):
@@ -204,6 +208,30 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
         self.do_ANY_send_response(self.dopost_code, self.dopost_message, self.dopost_data)
 
         
+    def do_POST_edit_event(self, client_data):
+        client_data["username"] = client_data["username"].upper()
+
+        # Get user_id from USERS table
+        user_id = util_h.get_user_id(client_data["username"])
+        if user_id is None:
+            self.set_response_header(400, 'User not found')
+            return
+
+        # Edit the event in the EVENTS table
+        updated_event = util_h.edit_event(
+            client_data['start_time'],
+            client_data['end_time'],
+            client_data['title'],
+            client_data['description'],
+            client_data['category_id'],
+            client_data['is_custom'],
+            user_id,
+            None,
+            client_data['event_id']
+        )
+
+        self.dopost_data = json_h.json_dump_string(updated_event)
+        self.set_response_header(200, "OK")
 
     def do_POST_insert_category(self, client_data):
         client_data["username"] = client_data["username"].upper()
