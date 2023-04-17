@@ -80,10 +80,83 @@ def delete_user_event(event_id):
             ID = ?,
         """,
         (
-           event_id
+           event_id,
         )
     )
     
+
+# function to insert a new event into the database
+def insert_new_calu_event(start_time, end_time, title, description, category_id, is_custom, user_id, flag):
+    
+    if(not(start_time == None or end_time == None or title == None or description == None or category_id == None or is_custom == None)):
+            event_id_query = sql_h.sql_execute_safe_search(
+                "database/root.db",
+                """
+                SELECT ID
+                FROM EVENTS
+                WHERE START_TIME = ? AND
+                    END_TIME = ? AND
+                    TITLE = ? AND
+                    DESCRIPTION = ? AND
+                    CATEGORY_ID = ? AND
+                    IS_CUSTOM = ? AND
+                    USER_ID = ?
+                """,
+                (
+                    start_time,
+                    end_time,
+                    title,
+                    description,
+                    category_id,
+                    is_custom,
+                    user_id
+                )
+            )
+            event_id_result = event_id_query.fetchone()
+            print(event_id_result)
+            if(event_id_result == None):
+                sql_h.sql_execute_safe_insert(
+                    "database/root.db",
+                    """
+                    INSERT INTO EVENTS 
+                    (
+                        START_TIME, 
+                        END_TIME,
+                        TITLE,
+                        DESCRIPTION, 
+                        CATEGORY_ID, 
+                        IS_CUSTOM, 
+                        USER_ID,
+                        FLAG
+                    )
+                    VALUES 
+                    (
+                        ?,
+                        ?, 
+                        ?, 
+                        ?, 
+                        ?, 
+                        ?, 
+                        ?, 
+                        ?
+                    )
+                    """,
+                    (
+                        start_time,
+                        end_time,
+                        title,
+                        description,
+                        category_id,
+                        is_custom,
+                        user_id,
+                        flag
+                    )
+                )
+            else:
+                print("Event collision.")
+ 
+
+
 # function to insert a new event into the database
 def insert_new_event(start_time, end_time, title, description, category_id, is_custom, user_id, flag):
     sql_h.sql_execute_safe_insert(
