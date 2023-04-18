@@ -74,19 +74,26 @@ class CALUWebScraperThread(threading.Thread):
                                             event_name  = data.get_text().strip()
                                             print(event_name)
                                             if(data) != None:
-                                                event_desc = ""
-                                                data_response        = requests.get("https://www.calu.edu" + data.find('a')['href'])
-                                                data_response_parsed = BeautifulSoup(str(data_response.text), 'html.parser')
-                                                data_anchor          = data_response_parsed.find('div', class_='b-band__inner')
-                                                data_body            = data_anchor.get_text().split('\n')
-                                                j = 0
-                                                for data_line in data_body:
-                                                    if(j >= 5):
-                                                            # date_parsed = dateparser.parse(data_line)
-                                                            # print(date_parsed)
-                                                            event_desc = event_desc + data_line + "\n"
-                                                    else:
-                                                        j+=1
+                                                finished_with_desc = False
+                                                while(not(finished_with_desc)):
+                                                    try:
+                                                        event_desc = ""
+                                                        data_response        = requests.get("https://www.calu.edu" + data.find('a')['href'])
+                                                        data_response_parsed = BeautifulSoup(str(data_response.text), 'html.parser')
+                                                        data_anchor          = data_response_parsed.find('div', class_='b-band__inner')
+                                                        data_body            = data_anchor.get_text().split('\n')
+                                                        j = 0
+                                                        for data_line in data_body:
+                                                            if(j >= 5):
+                                                                    # date_parsed = dateparser.parse(data_line)
+                                                                    # print(date_parsed)
+                                                                    event_desc = event_desc + data_line + "\n"
+                                                            else:
+                                                                j+=1
+                                                        finished_with_desc = True
+                                                    except ConnectionAbortedError:
+                                                        finished_with_desc = False
+
                                                 # print(event_desc)
                                         # event sender (maps to categories via a dictionary)
                                         elif i == 2:

@@ -67,7 +67,10 @@ class CALUHardwareManagerThread(threading.Thread):
             ####################################################################
             # inline functions for buttons 1 and 2
             def pin_btn_callback(channel):
-                suppressed = not(suppressed)
+                if(suppressed):
+                    suppressed = False
+                else:
+                    suppressed = True
                 rasp_io.output(PIN_LED_1, True)
                 sleep(1)
                 rasp_io.output(PIN_LED_1,False)
@@ -80,6 +83,7 @@ class CALUHardwareManagerThread(threading.Thread):
                 display.lcd_clear()
                 display.lcd_display_string("clearing ...", 1) 
                 display.lcd_display_string("screen   ...", 2)
+                thread_h.update_notifications("No new notifications...", 200, True)
                 sleep(2)
                 display.lcd_clear()
                 sleep(2)
@@ -100,7 +104,7 @@ class CALUHardwareManagerThread(threading.Thread):
                 while True:
                     if(suppressed):
                         display.lcd_display_string("Sleeping ...", 1)
-                    while not(suppressed):
+                    else:
                         display.lcd_display_string("Notifications:", 1)
                         # try to acquire the new global notification string
                         thread_h.update_message_lock.acquire()
@@ -108,8 +112,7 @@ class CALUHardwareManagerThread(threading.Thread):
                         thread_h.update_message_lock.release()
                         sleep(2)
                         display.lcd_clear()
-                        sleep(2) # clear, then loop starts again
-                    sleep(2)
+                        sleep(4) # clear, then loop starts again
             except KeyboardInterrupt as e:
                 print(e)
                 display.lcd_clear()	 # clear the display 
