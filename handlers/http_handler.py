@@ -188,6 +188,9 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
                     self.do_POST_get_user_subscribed_categories(client_data) 
                 elif(client_data['request_type'] == "add_category"):
                     self.do_POST_insert_category(client_data) 
+                #delete category
+                elif(client_data['request_type'] == "delete_category"):
+                    self.do_POST_delete_category_and_associated_data(client_data)
 
                 elif(client_data['request_type'] == "signout"):
                     self.do_POST_signout(client_data)
@@ -195,6 +198,8 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
                 #edit event
                 elif client_data['request_type'] == "edit_event":
                     self.do_POST_edit_event(client_data)
+
+                    
                     
             else:
                 if(has_requested == False):
@@ -207,7 +212,26 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
         # construct the server's response to the client. 
         self.do_ANY_send_response(self.dopost_code, self.dopost_message, self.dopost_data)
 
-        
+    
+    def do_POST_delete_category_and_associated_data(self, client_data):
+        client_data["username"] = client_data["username"].upper()
+
+        # Get user_id from USERS table
+        user_id = util_h.get_user_id(client_data["username"])
+        if user_id is None:
+            self.set_response_header(400, 'User not found')
+            return
+
+        # Get category_id from client_data
+        category_id = client_data["category_id"]
+
+        # Call the delete_category_and_associated_data function
+        util_h.delete_category_and_associated_data(user_id, category_id)
+
+        # Set response header and message
+        self.set_response_header(200, "OK")
+
+
     def do_POST_edit_event(self, client_data):
         client_data["username"] = client_data["username"].upper()
 

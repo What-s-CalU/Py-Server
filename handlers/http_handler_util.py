@@ -77,7 +77,7 @@ def delete_user_event(event_id):
         """
         DELETE FROM EVENTS
         WHERE
-            ID = ?,
+            ID = ?
         """,
         (
            event_id,
@@ -425,6 +425,30 @@ def get_calu_category_events(category_id):
     events = query_result_to_dict_list(events_result, events_query.description)
 
     return events
+
+def delete_category_and_associated_data(user_id, category_id):
+    # Delete user subscriptions associated with the category_id
+    delete_user_category_subscription(user_id, category_id)
+
+    # Delete events associated with the category_id
+    sql_h.sql_execute_safe_insert(
+        "database/root.db",
+        """
+        DELETE FROM EVENTS
+        WHERE CATEGORY_ID = ?
+        """,
+        (category_id,)
+    )
+
+    # Delete the category
+    sql_h.sql_execute_safe_insert(
+        "database/root.db",
+        """
+        DELETE FROM CATEGORIES
+        WHERE ID = ?
+        """,
+        (category_id,)
+    )
 
 # function to convert query result into list of dict
 def query_result_to_dict_list(query_result, query_description):

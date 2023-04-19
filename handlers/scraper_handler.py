@@ -109,7 +109,7 @@ class CALUWebScraperThread(threading.Thread):
                                             thread_h.s_print("Unexpected Value.")
                                         i += 1
                                 
-                                    http_util_h.insert_new_calu_event(str(event_start.isoformat()), str(event_end.isoformat()), event_name, event_desc, category_id, False, None, 0)
+                                    http_util_h.insert_new_calu_event(str(event_start.isoformat()) + ".000", str(event_end.isoformat()) + ".000", event_name, event_desc, category_id, False, None, 0)
                                     # send an http update??? The client could just do this via a refresh button and automatic refreshing; I'm not sure if http allows us to just 
                                     # send data like that without a thread constantly listening like this server does on every client.
                             else:
