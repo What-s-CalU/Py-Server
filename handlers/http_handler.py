@@ -107,7 +107,7 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
         # Write the server response. 
         self.send_response(code, message)
         self.end_headers()
-        self.wfile.write(data)
+        self.wfile.write(data.encode())
 
 
 #
