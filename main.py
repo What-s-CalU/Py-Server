@@ -34,8 +34,8 @@ def main():
     webScrapingThread  = scrape_h.CALUWebScraperThread()
     webScrapingThread.daemon = True
     
-    # hardwareHandlerThread = hardware_h.CALUHardwareManagerThread()
-    # hardwareHandlerThread.daemon = True
+    hardwareHandlerThread = hardware_h.CALUHardwareManagerThread()
+    hardwareHandlerThread.daemon = True
 
 
     # Public facing HTTP control.
@@ -46,7 +46,7 @@ def main():
     # run threads
     serverRequestThread.start()
     webScrapingThread.start()
-    # hardwareHandlerThread.start()
+    hardwareHandlerThread.start()
     
     # Keeps main alive (no rogue threads on exit)
     try:
@@ -93,7 +93,6 @@ def manage_timesheet(get_query:str, delete_query:str, timeout:int=240):
         # iterates through the entire list of entries for their current times and names. 
 
         userdata_return = userdata_query_signup.fetchall()
-        print(userdata_return)
         for current in userdata_return:
             if(current[0] != None):
                 # grabs entries from the shared results. 

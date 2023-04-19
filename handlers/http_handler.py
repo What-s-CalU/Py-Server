@@ -540,9 +540,9 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
                         (client_data["username"], client_checksum, client_time))
 
                     # For console logs; printed alongside email query.
-                    print(client_data['username']+"@pennwest.edu" + " registered with checksum: " + client_checksum + ".\n")
+                    print(client_data['username'] + " registered with checksum: " + client_checksum + ".\n")
                     send_email(
-                            client_data['username']+"@pennwest.edu",
+                            client_data['username'],
                             "Your What's@Calu Verification Code",
                             "Your What's@Calu Verification Code is:\n\""+ client_checksum+"\",\nDo not share this code with anyone. What's@Calu will never ask you to generate this code for use outside of the What's@Calu Planner app.")
                     
@@ -636,9 +636,9 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
                         (client_data["username"], client_checksum, client_time))
 
                     # For console logs; printed alongside email query.
-                    print(client_data['username']+"@pennwest.edu" + " reset with checksum: " + client_checksum + ".\n")
+                    print(client_data['username'] + " reset with checksum: " + client_checksum + ".\n")
                     send_email(
-                            client_data['username']+"@pennwest.edu",
+                            client_data['username'],
                             "Your What's@Calu Password Reset Code",
                             "Your What's@Calu Password Reset Code is:\n\""+ client_checksum+"\",\nDo not share this code with anyone. What's@Calu will never ask you to generate this code for use outside of the What's@Calu Planner app.")
                     
