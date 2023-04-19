@@ -39,9 +39,19 @@ class CALUWebScraperThread(threading.Thread):
         # The thread is always running, which allows us to start glob.SCRAPER_UP up arbitrarily. 
         while True:
             if glob.SCRAPER_UP:
+                http_util_h.query_all_events()
+                # Fetch events from the database
                 skipped_first = False
                 url = "http://calu.edu/news/announcements/"
-                response = requests.get(url)
+
+                # Prevents against connection aborts from the host.
+                finished_initial_url = False
+                while(not(finished_initial_url)):
+                    try:
+                        response = requests.get(url)
+                        finished_initial_url = True
+                    except ConnectionAbortedError:
+                        finished_initial_url = False
 
                 if response.status_code == 200:
                     response_parsed = BeautifulSoup(str(response.text), 'html.parser')
@@ -58,7 +68,7 @@ class CALUWebScraperThread(threading.Thread):
 
                                         # time posted (fallback event time if desc has no dates)
                                         if i == 0:
-                                            event_time  = data.get_text()
+                                            event_time  = data.get_text().encode('ascii',errors='ignore').decode('ascii')
                                             # print(event_time)
 
                                             # fallback date. 
@@ -71,7 +81,7 @@ class CALUWebScraperThread(threading.Thread):
 
                                         # description and time start parsing (time end is midnight for all events with a start time)
                                         elif i == 1:
-                                            event_name  = data.get_text().strip()
+                                            event_name  = data.get_text().strip().encode('ascii',errors='ignore').decode('ascii')
                                             print(event_name)
                                             if(data) != None:
                                                 finished_with_desc = False
@@ -87,7 +97,7 @@ class CALUWebScraperThread(threading.Thread):
                                                             if(j >= 5):
                                                                     # date_parsed = dateparser.parse(data_line)
                                                                     # print(date_parsed)
-                                                                    event_desc = event_desc + data_line + "\n"
+                                                                    event_desc = event_desc + data_line.encode('ascii',errors='ignore').decode('ascii') + "\n"
                                                             else:
                                                                 j+=1
                                                         finished_with_desc = True
@@ -97,7 +107,7 @@ class CALUWebScraperThread(threading.Thread):
                                                 # print(event_desc)
                                         # event sender (maps to categories via a dictionary)
                                         elif i == 2:
-                                            event_sender = data.get_text().strip()
+                                            event_sender = data.get_text().strip().encode('ascii',errors='ignore').decode('ascii')
                                             category_id = ""
                                             try:
                                                 category_id = glob.SCRAPER_CATEGORY_FIELDS[event_sender]
@@ -109,7 +119,7 @@ class CALUWebScraperThread(threading.Thread):
                                             thread_h.s_print("Unexpected Value.")
                                         i += 1
                                 
-                                    http_util_h.insert_new_calu_event(str(event_start.isoformat()) + ".000", str(event_end.isoformat()) + ".000", event_name, event_desc, category_id, False, None, 0)
+                                    # http_util_h.insert_new_calu_event(str(event_start.isoformat()) + ".000", str(event_end.isoformat()) + ".000", event_name, event_desc, category_id, False, None, 0)
                                     # send an http update??? The client could just do this via a refresh button and automatic refreshing; I'm not sure if http allows us to just 
                                     # send data like that without a thread constantly listening like this server does on every client.
                             else:
