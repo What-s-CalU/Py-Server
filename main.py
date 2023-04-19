@@ -62,10 +62,27 @@ def main():
 
 # probably should aquire a lock specific to the sql database. 
 def manage_tokens():
-        pass
-        # manage_timesheet("SELECT NAME AND TIME FROM SIGNUP", "DELETE FROM SIGNUP WHERE NAME IS ? AND TIME IS ?")
-        # manage_timesheet("SELECT NAME AND TIME FROM RESET",  "DELETE FROM RESET WHERE NAME IS ? AND TIME IS ?")
-        # manage_timesheet("SELECT NAME AND TIME FROM LOGIN",  "DELETE FROM LOGIN WHERE NAME IS ? AND TIME IS ?", 80)
+        manage_timesheet(
+            """SELECT
+                SIGNUP.NAME as name,
+                SIGNUP.TIME as time,
+                SIGNUP.ID   as id
+                FROM SIGNUP""",
+            "DELETE FROM SIGNUP WHERE NAME IS ? AND TIME IS ? AND ID IS ?")
+        manage_timesheet(
+            """SELECT
+                RESET.NAME as name,
+                RESET.TIME as time,
+                RESET.ID   as id
+                FROM RESET""",
+            "DELETE FROM RESET WHERE NAME IS ? AND TIME IS ? AND ID IS ?")
+        manage_timesheet(
+            """SELECT
+                LOGIN.NAME as name,
+                LOGIN.TIME as time,
+                LOGIN.ID   as id
+                FROM LOGIN""",
+            "DELETE FROM LOGIN WHERE NAME IS ? AND TIME IS ? AND ID IS ?",80)
 
 
 def manage_timesheet(get_query:str, delete_query:str, timeout:int=240):
@@ -73,22 +90,24 @@ def manage_timesheet(get_query:str, delete_query:str, timeout:int=240):
             "database/root.db",
             get_query,
             ())
-        current = userdata_query_signup.fetchone()
-
         # iterates through the entire list of entries for their current times and names. 
-        while(current != None):
 
-            # grabs entries from the shared results. 
-            name = current[0]
-            time = current[1]
+        userdata_return = userdata_query_signup.fetchall()
+        print(userdata_return)
+        for current in userdata_return:
+            if(current[0] != None):
+                # grabs entries from the shared results. 
+                table_name = current[0]
+                table_time = current[1]
+                table_id   = current[2]
 
-            # checks to see if the query would expire.
-            if((float(time) + timeout) <= float(time.time())):
-                sql_h.sql_execute_safe_insert(
-                "database/root.db",
-                delete_query,
-                (name, time))
-            current = userdata_query_signup.fetchone()
+                # checks to see if the query would expire.
+                if((float(table_time) + timeout) <= float(time.time())):
+                    sql_h.sql_execute_safe_insert(
+                    "database/root.db",
+                    delete_query,
+                    (table_name, table_time, table_id))
+                current = userdata_query_signup.fetchone()
 
 # autoruns main. 
 if __name__ == "__main__":

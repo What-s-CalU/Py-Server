@@ -116,6 +116,8 @@ def insert_new_calu_event(start_time, end_time, title, description, category_id,
                 if(str(event_title[0]) == title):
                     was_found = True
 
+            
+
             if(not(was_found)):
                 sql_h.sql_execute_safe_insert(
                     "database/root.db",

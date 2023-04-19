@@ -48,7 +48,11 @@ class CALUWebScraperThread(threading.Thread):
 
         event_time:  str = None
 
-        print(glob.SCRAPER_CATEGORY_FIELDS)
+        scrapee: requests.Session = requests.Session()
+
+        print("[Scraper] Current Webscraping Nametable:")
+        for value in glob.SCRAPER_CATEGORY_FIELDS:
+            print(value)
 
         # Runs while the scraper is up.
         # The thread is always running, which allows us to start glob.SCRAPER_UP up arbitrarily. 
@@ -59,9 +63,9 @@ class CALUWebScraperThread(threading.Thread):
                 url = "http://calu.edu/news/announcements/"
 
                 # Prevents against connection aborts from the host.
-                time.sleep(1)
-                response = requests.get(url, headers=headers)
-                requests.post(url=url, headers={'Connection':'close'})
+                time.sleep(0.01)
+                response = scrapee.get(url, headers=headers)
+                # requests.post(url=url, headers={'Connection':'close'})
 
 
                 if response.status_code == 200:
@@ -96,22 +100,29 @@ class CALUWebScraperThread(threading.Thread):
                                             event_name  = data.get_text().strip().encode('ascii',errors='ignore').decode('ascii')
                                             print(event_name)
                                             if(data) != None:
-                                                    event_desc = ""
-                                                    url_body   = "https://www.calu.edu" + data.find('a')['href']
-                                                    time.sleep(1)
-                                                    data_response        = requests.get(url_body, headers=headers)
-                                                    requests.post(url=url, headers={'Connection':'close'})
-                                                    data_response_parsed = BeautifulSoup(str(data_response.text), 'html.parser')
-                                                    data_anchor          = data_response_parsed.find('div', class_='b-band__inner')
-                                                    data_body            = data_anchor.get_text().split('\n')
-                                                    j = 0
-                                                    for data_line in data_body:
-                                                        if(j >= 5):
-                                                                # date_parsed = dateparser.parse(data_line)
-                                                                # print(date_parsed)
-                                                                event_desc = event_desc + data_line.encode('ascii',errors='ignore').decode('ascii') + "\n"
+                                                    finished_body = False
+                                                    while(not(finished_body)):
+                                                        event_desc = ""
+                                                        url_body   = "https://www.calu.edu" + data.find('a')['href']
+                                                        time.sleep(0.01)
+                                                        data_response        = scrapee.get(url_body, headers=headers)
+                                                        # requests.post(url=url, headers={'Connection':'close'})
+                                                        data_response_parsed = BeautifulSoup(str(data_response.text), 'html.parser')
+                                                        data_anchor          = data_response_parsed.find('div', class_='b-band__inner')
+                                                        
+                                                        if(data_anchor == None):
+                                                            finished_body = False
                                                         else:
-                                                            j+=1
+                                                            data_body            = data_anchor.get_text().split('\n')
+                                                            j = 0
+                                                            for data_line in data_body:
+                                                                if(j >= 5):
+                                                                        # date_parsed = dateparser.parse(data_line)
+                                                                        # print(date_parsed)
+                                                                        event_desc = event_desc + data_line.encode('ascii',errors='ignore').decode('ascii') + "\n"
+                                                                else:
+                                                                    j+=1
+                                                            finished_body = True
                                                 # print(event_desc)
                                         # event sender (maps to categories via a dictionary)
                                         elif i == 2:
