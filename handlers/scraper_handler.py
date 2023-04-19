@@ -50,6 +50,7 @@ class CALUWebScraperThread(threading.Thread):
 
         scrapee: requests.Session = requests.Session()
 
+        events_updated = []
         print("[Scraper] Current Webscraping Nametable:")
         for value in glob.SCRAPER_CATEGORY_FIELDS:
             print(value)
@@ -139,7 +140,7 @@ class CALUWebScraperThread(threading.Thread):
                                             thread_h.s_print("Unexpected Value.")
                                         i += 1
                                 
-                                    http_util_h.insert_new_calu_event(str(event_start.isoformat()) + ".000", str(event_end.isoformat()) + ".000", event_name, event_desc, category_id, False, None, 0)
+                                    http_util_h.insert_new_calu_event(str(event_start.isoformat()) + ".000", str(event_end.isoformat()) + ".000", event_name, event_desc, category_id, False, None, 0, events_updated)
                                     # send an http update??? The client could just do this via a refresh button and automatic refreshing; I'm not sure if http allows us to just 
                                     # send data like that without a thread constantly listening like this server does on every client.
                             else:

@@ -105,7 +105,7 @@ def query_all_calu_events():
 
 
 # function to insert a new event into the database
-def insert_new_calu_event(start_time, end_time, title, description, category_id, is_custom, user_id, flag):
+def insert_new_calu_event(start_time, end_time, title, description, category_id, is_custom, user_id, flag, events_updated):
     
     if(not(start_time == None or end_time == None or title == None or description == None or category_id == None or is_custom == None)):
 
@@ -157,7 +157,44 @@ def insert_new_calu_event(start_time, end_time, title, description, category_id,
                     )
                 )
             else:
-                print("Event already exists! Skipping...")
+                needs_updated = True
+                for event_title in events_updated:
+                    if(event_title == title):
+                        needs_updated = False
+                
+                # Always replaces events with their most up to date counterparts. 
+                if(needs_updated):
+                    events_updated.append(title)
+                    sql_h.sql_execute_safe_insert(
+                        "database/root.db",
+                        """
+                        UPDATE EVENTS
+                        SET
+                            START_TIME  = ?,
+                            END_TIME    = ?,
+                            TITLE       = ?,
+                            DESCRIPTION = ?,
+                            CATEGORY_ID = ?,
+                            IS_CUSTOM   = ?,
+                            USER_ID     = ?,
+                            FLAG        = ?
+                        WHERE
+                            TITLE = ?
+                        """,
+                        (
+                            start_time,
+                            end_time,
+                            title,
+                            description,
+                            category_id,
+                            is_custom,
+                            user_id,
+                            flag,
+                            title
+                        )
+                    )
+                else:
+                    print("Updated this session; skipping...")
  
 
 
