@@ -120,91 +120,109 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
         self.set_response_header(400, "Bad Request")
         self.dopost_data    = "{\"INFO\":200}"
         has_requested = False
-        # example from http read code
+
+
+        # loads the users request body as a json structure. 
         client_data: dict = json_h.json_load_string(self.http_body_to_string())
         
         if(glob.SERVER_IS_UP):
             has_requested = False
-            # switch statement for event mapping.
 
             # signin
             if(client_data['request_type']   == "signin"):
                 has_requested = True
                 self.do_POST_signin(client_data)
 
-            # account creation block
+
+            # account creation
             elif(client_data['request_type'] == "signup_start"):
                 has_requested = True
                 self.do_POST_signup_start(client_data)
+
             elif(client_data['request_type'] == "signup_continue"):
                 has_requested = True
                 self.do_POST_signup_continue(client_data)
+
             elif(client_data['request_type'] == "signup_end"):
                 has_requested = True
                 self.do_POST_signup_end(client_data)
             
-            # password reset block
+
+            # password reset
             elif(client_data['request_type'] == "reset_start"):
                 has_requested = True
                 self.do_POST_reset_start(client_data)
+
             elif(client_data['request_type'] == "reset_continue"):
                 has_requested = True
                 self.do_POST_reset_continue(client_data)
+
             elif(client_data['request_type'] == "reset_end"):
                 has_requested = True
                 self.do_POST_reset_end(client_data)
 
+
             # block for logged in userevents. 
             # only a user that passes through signin/signup_end/reset_end can get here. 
             if(check_checksum(client_data)):
-                # make custom events
-                # add event
-                if(client_data['request_type'] == "add_custom_event"):
-                    self.do_POST_add_custom_event(client_data)
+
                 # get events
-                # send user events to the client.
-                elif(client_data['request_type'] == "get_user_subscribed_events"):
+                if(client_data['request_type'] == "get_user_subscribed_events"):
                     self.do_POST_get_user_subscribed_events(client_data)
-                # send category names and subscribe status
+
                 elif(client_data['request_type'] == "get_calu_category_names"):
                     self.do_POST_get_calu_category_names(client_data)
+
+
+                # custom events 
+                elif(client_data['request_type'] == "add_custom_event"):
+                    self.do_POST_add_custom_event(client_data)
+
                 elif(client_data['request_type'] == "edit_custom_event"):
                     self.do_POST_edit_custom_event(client_data)
+
                 elif (client_data['request_type'] == "delete_event"):
                     self.do_POST_delete_user_event(client_data)
-
-
-                # get calu events
-                #update category subscription
-                elif(client_data['request_type'] == "update_calu_category_subscription"):
-                    self.do_POST_update_calu_category_subscription(client_data)   
-                # get events for calu category
-                elif (client_data['request_type'] == "get_calu_category_events"):
-                    self.do_POST_get_calu_category_events(client_data)
-                # catchall
-
-                #categories
-                elif(client_data['request_type'] == "get_user_subscribed_categories"):
-                    self.do_POST_get_user_subscribed_categories(client_data) 
-                elif(client_data['request_type'] == "add_category"):
-                    self.do_POST_insert_category(client_data) 
-                #delete category
-                elif(client_data['request_type'] == "delete_category"):
-                    self.do_POST_delete_category_and_associated_data(client_data)
-
-                elif(client_data['request_type'] == "signout"):
-                    self.do_POST_signout(client_data)
 
                 #edit event
                 elif client_data['request_type'] == "edit_event":
                     self.do_POST_edit_event(client_data)
+                elif client_data['request_type'] == "edit_calu_event_time":
+                    self.do_POST_edit_calu_event_time(client_data)
 
-                    
-                    
+
+                # get calu events
+                elif(client_data['request_type'] == "update_calu_category_subscription"):
+                    self.do_POST_update_calu_category_subscription(client_data)
+
+                elif (client_data['request_type'] == "get_calu_category_events"):
+                    self.do_POST_get_calu_category_events(client_data)
+
+
+                # categories
+                elif(client_data['request_type'] == "get_user_subscribed_categories"):
+                    self.do_POST_get_user_subscribed_categories(client_data)
+
+                elif(client_data['request_type'] == "add_category"):
+                    self.do_POST_insert_category(client_data)
+
+                elif(client_data['request_type'] == "delete_category"):
+                    self.do_POST_delete_category_and_associated_data(client_data)
+
+
+                # misc 
+                elif(client_data['request_type'] == "signout"):
+                    self.do_POST_signout(client_data)
+
+                elif(client_data['request_type'] == "keep_alive"):
+                    self.do_POST_keep_alive(client_data)
+
+            # catch for invalidly formatted requests.                     
             else:
                 if(has_requested == False):
                     self.set_response_header(506, "Not Acceptable")
-        # catchall for no service. 
+
+        # catch for inactive service. 
         else:
             self.set_response_header(503, "Service Unavailable")
             
@@ -212,230 +230,10 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
         # construct the server's response to the client. 
         self.do_ANY_send_response(self.dopost_code, self.dopost_message, self.dopost_data)
 
-    
-    def do_POST_delete_category_and_associated_data(self, client_data):
-        client_data["username"] = client_data["username"].upper()
 
-        # Get user_id from USERS table
-        user_id = util_h.get_user_id(client_data["username"])
-        if user_id is None:
-            self.set_response_header(400, 'User not found')
-            return
-
-        # Get category_id from client_data
-        category_id = client_data["category_id"]
-
-        # Call the delete_category_and_associated_data function
-        util_h.delete_category_and_associated_data(user_id, category_id)
-
-        # Set response header and message
-        self.set_response_header(200, "OK")
-
-
-    def do_POST_edit_event(self, client_data):
-        client_data["username"] = client_data["username"].upper()
-
-        # Get user_id from USERS table
-        user_id = util_h.get_user_id(client_data["username"])
-        if user_id is None:
-            self.set_response_header(400, 'User not found')
-            return
-
-        # Edit the event in the EVENTS table
-        updated_event = util_h.edit_event(
-            client_data['start_time'],
-            client_data['end_time'],
-            client_data['title'],
-            client_data['description'],
-            client_data['category_id'],
-            client_data['is_custom'],
-            user_id,
-            None,
-            client_data['event_id']
-        )
-
-        self.dopost_data = json_h.json_dump_string(updated_event)
-        self.set_response_header(200, "OK")
-
-    def do_POST_insert_category(self, client_data):
-        client_data["username"] = client_data["username"].upper()
-
-        # Get user_id from USERS table
-        user_id = util_h.get_user_id(client_data["username"])
-        if user_id is None:
-            self.set_response_header(400, 'User not found')
-            return
-
-        # Insert the new category into the CATEGORIES table
-        category_id = util_h.insert_new_category(
-            user_id,
-            client_data['color'],
-            client_data['category_name']
-        )
-        
-        util_h.insert_new_user_category_subscription(
-            user_id,
-            category_id
-        )
-
-        self.dopost_data = json_h.json_dump_string({"category_id": category_id})
-        self.set_response_header(200, "OK")
-
-    def do_POST_get_user_subscribed_categories(self, client_data):
-        client_data["username"] = client_data["username"].upper()
-
-        # Get user_id from USERS table
-        user_id = util_h.get_user_id(client_data["username"])
-        if user_id is None:
-            self.set_response_header(400, 'User not found')
-            return
-
-        # Get user-subscribed categories
-        user_subscribed_categories = util_h.get_user_subscribed_categories(user_id)
-        self.dopost_data = json_h.json_dump_string(user_subscribed_categories)
-        print(self.dopost_data)
-        self.set_response_header(200, "OK")
-
-
-
-    def do_POST_delete_user_event(self, client_data):
-        util_h.delete_user_event(
-            client_data['event_id']
-        )
-
-        self.set_response_header(200, "OK")
-
-    
-    def do_POST_get_calu_category_events(self, client_data):
-        category_events = util_h.get_calu_category_events(client_data["category_id"])
-        self.dopost_data = json_h.json_dump_string(category_events)
-        print(self.dopost_data)
-        self.set_response_header(200, "OK")
-
-
-    def do_POST_update_calu_category_subscription(self, client_data):
-        client_data["username"] = client_data["username"].upper()
-        # Get user_id from USERS table
-        user_id = util_h.get_user_id(client_data["username"])
-        if user_id is None:
-            self.set_response_header(400, 'User not found')
-            return
-        
-        category_id = client_data["category_id"]
-
-        if(client_data["is_subscribed"] == 1):
-        # Insert new user category subscription
-            util_h.insert_new_user_category_subscription(user_id, category_id)
-        if(client_data["is_subscribed"] == 0):
-            util_h.delete_user_category_subscription(user_id, category_id)
-
-        self.set_response_header(200, "OK")
-
-    def do_POST_get_calu_category_names(self, client_data):
-        client_data["username"] = client_data["username"].upper()
-
-        # Get user_id from USERS table
-        user_id = util_h.get_user_id(client_data["username"])
-        if user_id is None:
-            self.set_response_header(400, 'User not found')
-            return
-
-        # Get the list of categories with null user_id
-        categories_data = util_h.get_categories_with_subscription_status(user_id)
-
-        # Convert the list of categories to a JSON string and put it in post data
-        self.dopost_data = json_h.json_dump_string(categories_data)
-
-        self.set_response_header(200, "OK")
-
-
-    # Handles requests for all events users a subscribe to
-    def do_POST_get_user_subscribed_events(self, client_data):
-        client_data["username"] = client_data["username"].upper()
-
-        # Get user_id from USERS table
-        user_id = util_h.get_user_id(client_data["username"])
-        if user_id is None:
-            self.set_response_header(400, 'User not found')
-            return
-
-        # Get the list of events the user is subscribed to
-        user_subscribed_events = util_h.get_user_subscribed_events(user_id)
-
-        # Convert the list of events to a JSON string and put it in post data
-        self.dopost_data = json_h.json_dump_string(user_subscribed_events)
-        print(self.dopost_data)
-        self.set_response_header(200, "OK")
-
-
-
-    
-    # Handles requests to add a user created event
-    def do_POST_add_custom_event(self, client_data):
-        client_data["username"] = client_data["username"].upper()
-
-        # Get user_id from USERS table
-        user_id = util_h.get_user_id(client_data["username"])
-        if user_id is None:
-            self.set_response_header(400, 'User not found')
-            return
-
-        # Get category_id from CATEGORIES table
-        category_id = client_data["categoryID"]
-
-        if category_id is None:
-            self.set_response_header(400, 'Category ID not provided')
-            return
-
-        # Insert the custom event into the EVENTS table
-        event_id = util_h.insert_new_event(
-            client_data['start_time'],
-            client_data['end_time'],
-            client_data['title'],
-            client_data['description'],
-            category_id,
-            client_data['isCustom'],
-            user_id,
-            None
-        )
-        self.dopost_data = json_h.json_dump_string(event_id)
-        self.set_response_header(200, "OK")
-
-
-
-    # Handles requests to add a user created event
-    def do_POST_edit_custom_event(self, client_data):
-        client_data["username"] = client_data["username"].upper()
-
-        # Get user_id from USERS table
-        user_id = util_h.get_user_id(client_data["username"])
-        if user_id is None:
-            self.set_response_header(400, 'User not found')
-            return
-
-        # Get category_id from CATEGORIES table
-        category_id = client_data["categoryID"]
-
-        if category_id is None:
-            self.set_response_header(400, 'Category ID not provided')
-            return
-
-        # Insert the custom event into the EVENTS table
-        event_id = util_h.edit_event(
-            client_data['start_time'],
-            client_data['end_time'],
-            client_data['title'],
-            client_data['description'],
-            category_id,
-            client_data['isCustom'],
-            user_id,
-            None,
-            client_data['event_id']
-        )
-        self.dopost_data = json_h.json_dump_string(event_id)
-        self.set_response_header(200, "OK")
-
-
+#
+# Signin 
+#
 
 
     # Handles requests for a user to sign into the application.
@@ -477,33 +275,9 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
                 self.set_response_header(401, "Unauthorized")
 
 
-
-    # Handles requests for a user to log out of the application.
-    def do_POST_signout(self, client_data):
-            # rectify username. 
-            client_data["username"] = client_data["username"].upper()
-            
-            
-            # test query for correct username and password.
-            client_query =  sql_h.sql_execute_safe_search(
-                "database/root.db",
-                "SELECT NAME FROM LOGIN WHERE NAME IS ? AND CHECKSUM IS ?",
-                (client_data["username"], client_data["checksum"]))
-  
-            id = client_query.fetchone()
-            # check to see if the query returned anything (IE, what we were looking for is in the database)
-            if(id != None):
-                # delete the temporary login value. User is now logged out.
-                sql_h.sql_execute_safe_insert(
-                    "database/root.db",
-                    "DELETE FROM LOGIN WHERE NAME IS ? AND CHECKSUM IS ?",
-                    (client_data["username"], client_data["checksum"]))
-                self.set_response_header(200, "OK")
-                
-            # invalid user; access not granted. 
-            else:
-                self.set_response_header(401, "Unauthorized")
-
+#
+# Signup
+#
 
 
     def do_POST_signup_start(self, client_data):
@@ -695,6 +469,364 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
             # Otherwise, the user is not valid (we reuse the checksum to -try- to prevent a man in the middle attack/mass signups).
             else:
                 self.set_response_header(401, "Unauthorized")
+
+
+#
+# Signed In Block 
+# vvvvvvvvvvvvvvv
+
+
+    # Handles requests for all events users a subscribe to
+    def do_POST_get_user_subscribed_events(self, client_data):
+        client_data["username"] = client_data["username"].upper()
+
+        # Get user_id from USERS table
+        user_id = util_h.get_user_id(client_data["username"])
+        if user_id is None:
+            self.set_response_header(400, 'User not found')
+        else:
+            # Get the list of events the user is subscribed to
+            user_subscribed_events = util_h.get_user_subscribed_events(user_id)
+
+            # Convert the list of events to a JSON string and put it in post data
+            self.dopost_data = json_h.json_dump_string(user_subscribed_events)
+            print(self.dopost_data)
+            self.set_response_header(200, "OK")
+
+
+    def do_POST_get_calu_category_names(self, client_data):
+        client_data["username"] = client_data["username"].upper()
+
+        # Get user_id from USERS table
+        user_id = util_h.get_user_id(client_data["username"])
+        if user_id is None:
+            self.set_response_header(400, 'User not found')
+        else:
+            # Get the list of categories with null user_id
+            categories_data = util_h.get_categories_with_subscription_status(user_id)
+
+            # Convert the list of categories to a JSON string and put it in post data
+            self.dopost_data = json_h.json_dump_string(categories_data)
+
+            self.set_response_header(200, "OK")
+
+
+#
+# User Events 
+#
+
+
+    # Handles requests to add a user created event
+    def do_POST_add_custom_event(self, client_data):
+        client_data["username"] = client_data["username"].upper()
+
+        # Get user_id from USERS table
+        user_id = util_h.get_user_id(client_data["username"])
+        if user_id is None:
+            self.set_response_header(400, 'User not found')
+        else:
+            # Get category_id from CATEGORIES table
+            category_id = client_data["categoryID"]
+
+            if category_id is None:
+                self.set_response_header(400, 'Category ID not provided')
+            else:
+                # Insert the custom event into the EVENTS table
+                event_id = util_h.insert_new_event(
+                    client_data['start_time'],
+                    client_data['end_time'],
+                    client_data['title'],
+                    client_data['description'],
+                    category_id,
+                    client_data['isCustom'],
+                    user_id,
+                    None
+                )
+                self.dopost_data = json_h.json_dump_string(event_id)
+                self.set_response_header(200, "OK")
+
+
+    # Handles requests to add a user created event
+    def do_POST_edit_custom_event(self, client_data):
+        client_data["username"] = client_data["username"].upper()
+
+        # Get user_id from USERS table
+        user_id = util_h.get_user_id(client_data["username"])
+        if user_id is None:
+            self.set_response_header(400, 'User not found')
+        else:
+            # Get category_id from CATEGORIES table
+            category_id = client_data["categoryID"]
+
+            if category_id is None:
+                self.set_response_header(400, 'Category ID not provided')
+            else:
+                # Insert the custom event into the EVENTS table
+                event_id = util_h.edit_event(
+                    client_data['start_time'],
+                    client_data['end_time'],
+                    client_data['title'],
+                    client_data['description'],
+                    category_id,
+                    client_data['isCustom'],
+                    user_id,
+                    None,
+                    client_data['event_id']
+                )
+                self.dopost_data = json_h.json_dump_string(event_id)
+                self.set_response_header(200, "OK")
+
+
+    def do_POST_delete_user_event(self, client_data):
+        util_h.delete_user_event(
+            client_data['event_id']
+        )
+
+        self.set_response_header(200, "OK")
+
+
+
+    def do_POST_edit_event(self, client_data):
+        client_data["username"] = client_data["username"].upper()
+
+        # Get user_id from USERS table
+        user_id = util_h.get_user_id(client_data["username"])
+        if user_id is None:
+            self.set_response_header(400, 'User not found')
+        else:
+            # Edit the event in the EVENTS table
+            updated_event = util_h.edit_event(
+                client_data['start_time'],
+                client_data['end_time'],
+                client_data['title'],
+                client_data['description'],
+                client_data['category_id'],
+                client_data['is_custom'],
+                user_id,
+                None,
+                client_data['event_id']
+            )
+
+            self.dopost_data = json_h.json_dump_string(updated_event)
+            self.set_response_header(200, "OK")
+
+
+    def do_POST_edit_calu_event_time(self, client_data):
+        user_id = util_h.get_user_id(client_data["username"])
+
+        # Whether or not the event the override refers to exists. 
+        events_query = sql_h.sql_execute_safe_search(
+            "database/root.db",
+            """
+            SELECT
+                EVENTS.NAME as name
+            FROM EVENTS
+            WHERE
+                EVENTS.ID = ?,
+                EVENTS.USER_ID is NULL
+            """,
+            (client_data["event_id"],)
+        )
+
+        # Whether or not the override exists
+        events_override_query = sql_h.sql_execute_safe_search(
+            "database/root.db",
+            """
+            SELECT
+                EVENTS.NAME as name
+            FROM EVENTS
+            WHERE
+                EVENTS.FLAG    = ?,
+                EVENTS.USER_ID = ? 
+            """,
+            (client_data["event_id"], user_id)
+        )
+
+
+        # values for our insertions/updates
+        event_id       = events_query.fetchone()
+        event_override = events_override_query.fetchone()
+
+        if(event_id != None):
+            # insert a new override 
+            if(not(event_override)):
+                sql_h.sql_execute_safe_insert(
+                    "database/root.db",
+                    """
+                    INSERT INTO EVENTS 
+                    (
+                        START_TIME, 
+                        END_TIME, 
+                        USER_ID, 
+                        FLAG
+                    )
+                    VALUES 
+                    (
+                        ?,
+                        ?, 
+                        ?, 
+                        ?
+                    )""",
+                    (
+                        client_data["start_time"],
+                        client_data["end_time"],
+                        1,
+                        user_id,
+                        int(client_data["event_id"])
+                    )
+                )
+            else:
+                sql_h.sql_execute_safe_insert(
+                    "database/root.db",
+                    """
+                    UPDATE EVENTS
+                    SET
+                        START_TIME = ?,
+                        END_TIME   = ?,
+                    WHERE
+                        USER_ID    = ?,
+                        FLAG       = ?
+                        """,
+                    (
+                        client_data["start_time"],
+                        client_data["end_time"],
+                        user_id,
+                        int(client_data["event_id"])
+                    )
+                )
+        self.set_response_header(200, "OK")
+
+
+#
+# Get Calu Events 
+#
+
+
+    def do_POST_update_calu_category_subscription(self, client_data):
+        client_data["username"] = client_data["username"].upper()
+        # Get user_id from USERS table
+        user_id = util_h.get_user_id(client_data["username"])
+        if user_id is None:
+            self.set_response_header(400, 'User not found')
+        else:
+            category_id = client_data["category_id"]
+
+            if(client_data["is_subscribed"] == 1):
+            # Insert new user category subscription
+                util_h.insert_new_user_category_subscription(user_id, category_id)
+            if(client_data["is_subscribed"] == 0):
+                util_h.delete_user_category_subscription(user_id, category_id)
+
+            self.set_response_header(200, "OK")
+
+
+    def do_POST_get_calu_category_events(self, client_data):
+        category_events = util_h.get_calu_category_events(client_data["category_id"])
+        self.dopost_data = json_h.json_dump_string(category_events)
+        print(self.dopost_data)
+        self.set_response_header(200, "OK")
+
+
+#
+# User Categories 
+#
+
+
+    def do_POST_get_user_subscribed_categories(self, client_data):
+        client_data["username"] = client_data["username"].upper()
+
+        # Get user_id from USERS table
+        user_id = util_h.get_user_id(client_data["username"])
+        if user_id is None:
+            self.set_response_header(400, 'User not found')
+        else:
+            # Get user-subscribed categories
+            user_subscribed_categories = util_h.get_user_subscribed_categories(user_id)
+            self.dopost_data = json_h.json_dump_string(user_subscribed_categories)
+            print(self.dopost_data)
+            self.set_response_header(200, "OK")
+
+
+    def do_POST_insert_category(self, client_data):
+        client_data["username"] = client_data["username"].upper()
+
+        # Get user_id from USERS table
+        user_id = util_h.get_user_id(client_data["username"])
+        if user_id is None:
+            self.set_response_header(400, 'User not found')
+        else:
+            # Insert the new category into the CATEGORIES table
+            category_id = util_h.insert_new_category(
+                user_id,
+                client_data['color'],
+                client_data['category_name']
+            )
+            
+            util_h.insert_new_user_category_subscription(
+                user_id,
+                category_id
+            )
+
+            self.dopost_data = json_h.json_dump_string({"category_id": category_id})
+            self.set_response_header(200, "OK")
+
+
+    def do_POST_delete_category_and_associated_data(self, client_data):
+        client_data["username"] = client_data["username"].upper()
+
+        # Get user_id from USERS table
+        user_id = util_h.get_user_id(client_data["username"])
+        if user_id is None:
+            self.set_response_header(400, 'User not found')
+        else:
+            # Get category_id from client_data
+            category_id = client_data["category_id"]
+
+            # Call the delete_category_and_associated_data function
+            util_h.delete_category_and_associated_data(user_id, category_id)
+
+            # Set response header and message
+            self.set_response_header(200, "OK")
+
+
+#
+# Misc
+#
+
+
+    # dummy function for keeping the connection alive.
+    def do_POST_keep_alive(self, client_data):
+        # Set response header and message
+        self.set_response_header(200, "OK")
+        return
+
+
+    # Handles requests for a user to log out of the application.
+    def do_POST_signout(self, client_data):
+            # rectify username. 
+            client_data["username"] = client_data["username"].upper()
+            
+            
+            # test query for correct username and password.
+            client_query =  sql_h.sql_execute_safe_search(
+                "database/root.db",
+                "SELECT NAME FROM LOGIN WHERE NAME IS ? AND CHECKSUM IS ?",
+                (client_data["username"], client_data["checksum"]))
+  
+            id = client_query.fetchone()
+            # check to see if the query returned anything (IE, what we were looking for is in the database)
+            if(id != None):
+                # delete the temporary login value. User is now logged out.
+                sql_h.sql_execute_safe_insert(
+                    "database/root.db",
+                    "DELETE FROM LOGIN WHERE NAME IS ? AND CHECKSUM IS ?",
+                    (client_data["username"], client_data["checksum"]))
+                self.set_response_header(200, "OK")
+                
+            # invalid user; access not granted. 
+            else:
+                self.set_response_header(401, "Unauthorized")
+
 
 
     # we do not implement proper HTTP protocol, so it's unimplemented here. 

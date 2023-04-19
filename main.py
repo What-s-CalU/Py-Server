@@ -34,8 +34,8 @@ def main():
     webScrapingThread  = scrape_h.CALUWebScraperThread()
     webScrapingThread.daemon = True
     
-    hardwareHandlerThread = hardware_h.CALUHardwareManagerThread()
-    hardwareHandlerThread.daemon = True
+    # hardwareHandlerThread = hardware_h.CALUHardwareManagerThread()
+    # hardwareHandlerThread.daemon = True
 
 
     # Public facing HTTP control.
@@ -46,7 +46,7 @@ def main():
     # run threads
     serverRequestThread.start()
     webScrapingThread.start()
-    hardwareHandlerThread.start()
+    # hardwareHandlerThread.start()
     
     # Keeps main alive (no rogue threads on exit)
     try:

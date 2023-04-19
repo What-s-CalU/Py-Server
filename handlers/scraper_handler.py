@@ -65,6 +65,7 @@ class CALUWebScraperThread(threading.Thread):
                 # Prevents against connection aborts from the host.
                 time.sleep(0.01)
                 response = scrapee.get(url, headers=headers)
+
                 # requests.post(url=url, headers={'Connection':'close'})
 
 
