@@ -88,26 +88,19 @@ def delete_user_event(event_id):
 
 
 # function to insert a new event into the database
-def query_all_events():
+def query_all_calu_events():
     events_query = sql_h.sql_execute_safe_search(
         "database/root.db",
         """
         SELECT
-            EVENTS.ID as id,
-            EVENTS.START_TIME as start_time,
-            EVENTS.END_TIME as end_time,
-            EVENTS.TITLE as title,
-            EVENTS.DESCRIPTION as description,
-            EVENTS.CATEGORY_ID AS categoryID,
-            EVENTS.IS_CUSTOM as isCustom,
-            EVENTS.FLAG as flag
+            EVENTS.TITLE as title
         FROM EVENTS
+        WHERE
+            USER_ID IS NULL
         """,
         ()
     )
-    for data in events_query.fetchall():
-        for datum in data:
-            print(str(datum)+"\n")
+    return events_query.fetchall()
 
 
 
@@ -115,32 +108,15 @@ def query_all_events():
 def insert_new_calu_event(start_time, end_time, title, description, category_id, is_custom, user_id, flag):
     
     if(not(start_time == None or end_time == None or title == None or description == None or category_id == None or is_custom == None)):
-            event_id_query = sql_h.sql_execute_safe_search(
-                "database/root.db",
-                """
-                SELECT ID
-                FROM EVENTS
-                WHERE START_TIME = ? AND
-                    END_TIME = ? AND
-                    TITLE = ? AND
-                    DESCRIPTION = ? AND
-                    CATEGORY_ID = ? AND
-                    IS_CUSTOM = ? AND
-                    USER_ID = ?
-                """,
-                (
-                    start_time,
-                    end_time,
-                    title,
-                    description,
-                    category_id,
-                    is_custom,
-                    user_id
-                )
-            )
-            event_id_result = event_id_query.fetchone()
-            print(event_id_result)
-            if(event_id_result == None):
+
+
+            was_found = False
+
+            for event_title in query_all_calu_events():
+                if(str(event_title[0]) == title):
+                    was_found = True
+
+            if(not(was_found)):
                 sql_h.sql_execute_safe_insert(
                     "database/root.db",
                     """
@@ -178,6 +154,8 @@ def insert_new_calu_event(start_time, end_time, title, description, category_id,
                         flag
                     )
                 )
+            else:
+                print("Event already exists! Skipping...")
  
 
 

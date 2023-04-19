@@ -8,6 +8,7 @@ import threading
 from bs4 import BeautifulSoup
 import requests
 import datetime
+import time
 # import dateparser
 
 import handlers.http_handler      as http_h
@@ -22,10 +23,24 @@ import global_values              as glob
 # webscraper's tasks as a thread (which can be ran/released periodically via main)
 class CALUWebScraperThread(threading.Thread):
     def run(self):
+
+        # Lie to the connections we make about what the info is for,
+        # this is the only way to prevent an abort when scraping. 
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "cross-site"
+        }
         skipped_first: bool = False
-        event_name:  str = None
-        event_desc:  str = None
-        category_id: str = None
+        event_name:    str = None
+        event_desc:    str = None
+        category_id:   str = None
         
         # time value fields 
         event_start: datetime.datetime = None
@@ -39,24 +54,22 @@ class CALUWebScraperThread(threading.Thread):
         # The thread is always running, which allows us to start glob.SCRAPER_UP up arbitrarily. 
         while True:
             if glob.SCRAPER_UP:
-                http_util_h.query_all_events()
                 # Fetch events from the database
                 skipped_first = False
                 url = "http://calu.edu/news/announcements/"
 
                 # Prevents against connection aborts from the host.
-                finished_initial_url = False
-                while(not(finished_initial_url)):
-                    try:
-                        response = requests.get(url)
-                        finished_initial_url = True
-                    except ConnectionAbortedError:
-                        finished_initial_url = False
+                time.sleep(1)
+                response = requests.get(url, headers=headers)
+                requests.post(url=url, headers={'Connection':'close'})
+
 
                 if response.status_code == 200:
                     response_parsed = BeautifulSoup(str(response.text), 'html.parser')
                     events = response_parsed.find_all('tr')
 
+
+                    # hardcoded checks for whether or not events equals none.
                     if events != None:
                         for event in events:
                             if(skipped_first):
@@ -65,7 +78,6 @@ class CALUWebScraperThread(threading.Thread):
 
                                 if event_data != None:
                                     for data in event_data:
-
                                         # time posted (fallback event time if desc has no dates)
                                         if i == 0:
                                             event_time  = data.get_text().encode('ascii',errors='ignore').decode('ascii')
@@ -84,26 +96,22 @@ class CALUWebScraperThread(threading.Thread):
                                             event_name  = data.get_text().strip().encode('ascii',errors='ignore').decode('ascii')
                                             print(event_name)
                                             if(data) != None:
-                                                finished_with_desc = False
-                                                while(not(finished_with_desc)):
-                                                    try:
-                                                        event_desc = ""
-                                                        data_response        = requests.get("https://www.calu.edu" + data.find('a')['href'])
-                                                        data_response_parsed = BeautifulSoup(str(data_response.text), 'html.parser')
-                                                        data_anchor          = data_response_parsed.find('div', class_='b-band__inner')
-                                                        data_body            = data_anchor.get_text().split('\n')
-                                                        j = 0
-                                                        for data_line in data_body:
-                                                            if(j >= 5):
-                                                                    # date_parsed = dateparser.parse(data_line)
-                                                                    # print(date_parsed)
-                                                                    event_desc = event_desc + data_line.encode('ascii',errors='ignore').decode('ascii') + "\n"
-                                                            else:
-                                                                j+=1
-                                                        finished_with_desc = True
-                                                    except ConnectionAbortedError:
-                                                        finished_with_desc = False
-
+                                                    event_desc = ""
+                                                    url_body   = "https://www.calu.edu" + data.find('a')['href']
+                                                    time.sleep(1)
+                                                    data_response        = requests.get(url_body, headers=headers)
+                                                    requests.post(url=url, headers={'Connection':'close'})
+                                                    data_response_parsed = BeautifulSoup(str(data_response.text), 'html.parser')
+                                                    data_anchor          = data_response_parsed.find('div', class_='b-band__inner')
+                                                    data_body            = data_anchor.get_text().split('\n')
+                                                    j = 0
+                                                    for data_line in data_body:
+                                                        if(j >= 5):
+                                                                # date_parsed = dateparser.parse(data_line)
+                                                                # print(date_parsed)
+                                                                event_desc = event_desc + data_line.encode('ascii',errors='ignore').decode('ascii') + "\n"
+                                                        else:
+                                                            j+=1
                                                 # print(event_desc)
                                         # event sender (maps to categories via a dictionary)
                                         elif i == 2:
@@ -119,7 +127,7 @@ class CALUWebScraperThread(threading.Thread):
                                             thread_h.s_print("Unexpected Value.")
                                         i += 1
                                 
-                                    # http_util_h.insert_new_calu_event(str(event_start.isoformat()) + ".000", str(event_end.isoformat()) + ".000", event_name, event_desc, category_id, False, None, 0)
+                                    http_util_h.insert_new_calu_event(str(event_start.isoformat()) + ".000", str(event_end.isoformat()) + ".000", event_name, event_desc, category_id, False, None, 0)
                                     # send an http update??? The client could just do this via a refresh button and automatic refreshing; I'm not sure if http allows us to just 
                                     # send data like that without a thread constantly listening like this server does on every client.
                             else:
