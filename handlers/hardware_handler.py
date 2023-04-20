@@ -108,7 +108,7 @@ class CALUHardwareManagerThread(threading.Thread):
                         display.lcd_display_string("Notifications:", 1)
                         # try to acquire the new global notification string
                         thread_h.update_message_lock.acquire()
-                        long_string(display, thread_h.NOTIFICATION_MESSAGE, 2)
+                        long_string(display, glob.NOTIFICATION_MESSAGE, 2)
                         thread_h.update_message_lock.release()
                         sleep(2)
                         display.lcd_clear()
