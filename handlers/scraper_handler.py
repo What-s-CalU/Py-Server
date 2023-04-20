@@ -39,7 +39,7 @@ class CALUWebScraperThread(threading.Thread):
         }
         skipped_first: bool = False
         event_name:    str = None
-        event_desc:    str = None
+        event_desc:    str = ""
         category_id:   str = None
         
         # time value fields 
@@ -110,7 +110,7 @@ class CALUWebScraperThread(threading.Thread):
                                         # description and time start parsing (time end is midnight for all events with a start time)
                                         elif i == 1:
                                             event_name  = data.get_text().strip().encode('ascii',errors='ignore').decode('ascii')
-                                            thread_h.s_print("[SCRAPER] [EVENT] <Viewing \"{}\".>".format(event_name))
+                                            """                                            thread_h.s_print("[SCRAPER] [EVENT] <Viewing \"{}\".>".format(event_name))
                                             if(data) != None:
                                                     finished_body = False
                                                     while(not(finished_body)):
@@ -140,7 +140,8 @@ class CALUWebScraperThread(threading.Thread):
                                                                 else:
                                                                     j+=1
                                                             finished_body = True
-                                                # print(event_desc)
+                                                # print(event_desc)"""
+
                                         # event sender (maps to categories via a dictionary)
                                         elif i == 2:
                                             event_sender = data.get_text().strip().encode('ascii',errors='ignore').decode('ascii')
