@@ -50,10 +50,14 @@ class CALUWebScraperThread(threading.Thread):
 
         scrapee: requests.Session = requests.Session()
 
+        finished_init: bool = False
+        
+        last_scraped: float = time.time()
+
         events_updated = []
-        print("[Scraper] Current Webscraping Nametable:")
+        thread_h.s_print("[SCRAPER] <Current Webscraping Nametable>:")
         for value in glob.SCRAPER_CATEGORY_FIELDS:
-            print(value)
+            thread_h.s_print(("[SCRAPER] <{}>".format(value)))
 
         # Runs while the scraper is up.
         # The thread is always running, which allows us to start glob.SCRAPER_UP up arbitrarily. 
@@ -62,15 +66,21 @@ class CALUWebScraperThread(threading.Thread):
                 # Fetch events from the database
                 skipped_first = False
                 url = "http://calu.edu/news/announcements/"
-
-                # Prevents against connection aborts from the host.
-                time.sleep(0.01)
-                response = scrapee.get(url, headers=headers)
-
+                while(not(finished_init)): 
+                    try:
+                        # Prevents against connection aborts from the host.
+                        time.sleep(0.10)
+                        response = scrapee.get(url, headers=headers, timeout=4.35)
+                        finished_init   = True
+                    except requests.exceptions.ReadTimeout:
+                        thread_h.s_print("[SCRAPER] [ERROR] <Connection timed out; attempting reconnection.>")
+                        continue
                 # requests.post(url=url, headers={'Connection':'close'})
 
 
                 if response.status_code == 200:
+
+
                     response_parsed = BeautifulSoup(str(response.text), 'html.parser')
                     events = response_parsed.find_all('tr')
 
@@ -100,17 +110,22 @@ class CALUWebScraperThread(threading.Thread):
                                         # description and time start parsing (time end is midnight for all events with a start time)
                                         elif i == 1:
                                             event_name  = data.get_text().strip().encode('ascii',errors='ignore').decode('ascii')
-                                            print(event_name)
+                                            thread_h.s_print("[SCRAPER] [EVENT] <Viewing \"{}\".>".format(event_name))
                                             if(data) != None:
                                                     finished_body = False
                                                     while(not(finished_body)):
                                                         event_desc = ""
                                                         url_body   = "https://www.calu.edu" + data.find('a')['href']
-                                                        time.sleep(0.01)
-                                                        data_response        = scrapee.get(url_body, headers=headers)
-                                                        # requests.post(url=url, headers={'Connection':'close'})
-                                                        data_response_parsed = BeautifulSoup(str(data_response.text), 'html.parser')
-                                                        data_anchor          = data_response_parsed.find('div', class_='b-band__inner')
+                                                        try:
+                                                            time.sleep(0.10)
+                                                            data_response        = scrapee.get(url_body, headers=headers, timeout=4.35)
+                                                            data_response_parsed = BeautifulSoup(str(data_response.text), 'html.parser')
+                                                            data_anchor          = data_response_parsed.find('div', class_='b-band__inner')
+                                                        except requests.exceptions.ReadTimeout:
+                                                            thread_h.s_print("[SCRAPER] [ERROR] <Connection timed out; attempting reconnection.>")
+                                                            scrapee.post(url=url, headers={'Connection':'close'})
+                                                            continue
+                                                        
                                                         
                                                         if(data_anchor == None):
                                                             finished_body = False
@@ -137,7 +152,7 @@ class CALUWebScraperThread(threading.Thread):
                                         
                                         # error handler.
                                         else:
-                                            thread_h.s_print("Unexpected Value.")
+                                            thread_h.s_print("[SCRAPER] [ERROR] <Unexpected values in <tr> body.>")
                                         i += 1
                                 
                                     http_util_h.insert_new_calu_event(str(event_start.isoformat()) + ".000", str(event_end.isoformat()) + ".000", event_name, event_desc, category_id, False, None, 0, events_updated)
@@ -145,5 +160,15 @@ class CALUWebScraperThread(threading.Thread):
                                     # send data like that without a thread constantly listening like this server does on every client.
                             else:
                                 skipped_first = True
-                print("Scraped Successfully.")
-                glob.SCRAPER_UP = False
+                thread_h.s_print("[SCRAPER] <Scraped Successfully. Next scrape scheduled in 24 hours.>")
+                glob.SCRAPER_UP   = False
+                glob.SERVER_IS_UP = True
+                
+            # waits until the server can scrape again. 
+            else:
+                if((float(last_scraped) + 86400) < time.time()):
+                    last_scraped = time.time()
+                    glob.SCRAPER_UP   = True
+                    glob.SERVER_IS_UP = False
+                time.sleep(1)
+                   

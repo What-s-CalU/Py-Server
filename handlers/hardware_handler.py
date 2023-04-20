@@ -11,6 +11,7 @@ import threading
 import RPi.GPIO as rasp_io
 import drivers
 import handlers.threading_handler as thread_h
+import global_values as glob
 
 # globals specific to this module. 
 PIN_BTN_1: int = 17
@@ -38,7 +39,6 @@ def long_string(display, text="", num_line=1, num_cols=16):
 # Hardware's tasks as a thread, intended to run forever. 
 class CALUHardwareManagerThread(threading.Thread):
        def run(self):
-            suppressed: bool = True
 
             # mode and warning flags. 
             rasp_io.setmode(rasp_io.BCM)
@@ -67,10 +67,10 @@ class CALUHardwareManagerThread(threading.Thread):
             ####################################################################
             # inline functions for buttons 1 and 2
             def pin_btn_callback(channel):
-                if(suppressed):
-                    suppressed = False
+                if(glob.BUTTON_SUPPRESS):
+                    glob.BUTTON_SUPPRESS = False
                 else:
-                    suppressed = True
+                    glob.BUTTON_SUPPRESS = True
                 rasp_io.output(PIN_LED_1, True)
                 sleep(1)
                 rasp_io.output(PIN_LED_1,False)
@@ -102,8 +102,8 @@ class CALUHardwareManagerThread(threading.Thread):
             sleep(2)
             try:
                 while True:
-                    if(suppressed):
-                        display.lcd_display_string("Sleeping ...", 1)
+                    if(glob.BUTTON_SUPPRESS):
+                        sleep(1)
                     else:
                         display.lcd_display_string("Notifications:", 1)
                         # try to acquire the new global notification string

@@ -1,5 +1,5 @@
-import handlers.sql_handler as sql_h
-
+import handlers.sql_handler       as sql_h
+import handlers.threading_handler as thread_h
 # takes a string paramater and returns the user_id of that string in the database
 def get_user_id(username):
     user_id_query = sql_h.sql_execute_safe_search(
@@ -35,7 +35,7 @@ def get_category_id(category, user_id):
 
 # takes a user_id integer paramater and a category_id integer paramater and inserts a subcription into the user_Category_sbuscription table
 def insert_new_user_category_subscription(user_id, category_id):
-    print(f"user_id: {user_id}, category_id: {category_id}")
+    thread_h.s_print(f"user_id: {user_id}, category_id: {category_id}")
     sql_h.sql_execute_safe_insert(
         "database/root.db",
         """
@@ -156,6 +156,7 @@ def insert_new_calu_event(start_time, end_time, title, description, category_id,
                         flag
                     )
                 )
+                thread_h.s_print("[SCRAPER] [EVENT] <Added event \"{}\".>".format(title))
             else:
                 needs_updated = True
                 for event_title in events_updated:
@@ -193,8 +194,9 @@ def insert_new_calu_event(start_time, end_time, title, description, category_id,
                             title
                         )
                     )
+                    thread_h.s_print("[SCRAPER] [EVENT] <Updated event \"{}\".>".format(title))
                 else:
-                    print("Updated this session; skipping...")
+                    thread_h.s_print("[SCRAPER] [EVENT] <Already updated event \"{}\"; skipping.>".format(title))
  
 
 
@@ -262,7 +264,7 @@ def insert_new_event(start_time, end_time, title, description, category_id, is_c
     )
 
     event_id_result = event_id_query.fetchone()
-    print(event_id_result)
+    thread_h.s_print(event_id_result)
     return {'ID': event_id_result[0]}
 
 
@@ -322,7 +324,7 @@ def edit_event(start_time, end_time, title, description, category_id, is_custom,
     )
 
     event_id_result = event_id_query.fetchone()
-    print(event_id_result)
+    thread_h.s_print(event_id_result)
     return {'ID': event_id_result[0]}
 
 
@@ -391,7 +393,7 @@ def get_user_subscribed_events(user_id):
         (user_id,)
     )
     events_result = events_query.fetchall()
-    print(events_result)
+    thread_h.s_print(events_result)
     # Convert the result to a list of dicts
     events = query_result_to_dict_list(events_result, events_query.description)
 
@@ -413,7 +415,7 @@ def get_user_subscribed_categories(user_id):
         (user_id,)
     )
     categories_result = categories_query.fetchall()
-    print(categories_result)
+    thread_h.s_print(categories_result)
     # Convert the result to a list of dicts
     categories = query_result_to_dict_list(categories_result, categories_query.description)
 
@@ -439,7 +441,7 @@ def get_categories_with_subscription_status(user_id):
 
     categories = query_result_to_dict_list(categories_result, categories_query.description)
 
-    print(categories)
+    thread_h.s_print(categories)
     return categories
 
 def get_calu_category_events(category_id):
@@ -461,7 +463,7 @@ def get_calu_category_events(category_id):
         (category_id,)
     )
     events_result = events_query.fetchall()
-    print(events_result)
+    thread_h.s_print(events_result)
     # Convert the result to a list of dicts
     events = query_result_to_dict_list(events_result, events_query.description)
 
