@@ -102,21 +102,21 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
 
 
     # Sends a templated http response constructed in do_POST().
-def do_ANY_send_response(self, code: int, message: str, data: str):
-        # Try to update the display with the latest http serve message. 
-        thread_h.update_notifications("[{}] Sent \"{}\", {}.".format(glob.NOTIFICATION_CODE, message, code), code, True)
+    def do_ANY_send_response(self, code: int, message: str, data: str):
+            # Try to update the display with the latest http serve message. 
+            thread_h.update_notifications("[{}] Sent \"{}\", {}.".format(glob.NOTIFICATION_CODE, message, code), code, True)
 
-        # Write the server response.
-        self.send_response(code, message)
-        self.send_header("Content-type", "application/json")
+            # Write the server response.
+            self.send_response(code, message)
+            self.send_header("Content-type", "application/json")
 
-        # Set the Content-Length header
-        content_length = len(data.encode('utf-8'))
-        self.send_header("Content-Length", content_length)
-        print(content_length)
-        self.send_header("Connection", "keep-alive")
-        self.end_headers()
-        self.wfile.write(data.encode())
+            # Set the Content-Length header
+            content_length = len(data.encode('utf-8'))
+            self.send_header("Content-Length", content_length)
+            print(content_length)
+            self.send_header("Connection", "keep-alive")
+            self.end_headers()
+            self.wfile.write(data.encode())
 
 
 #

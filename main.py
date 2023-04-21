@@ -11,7 +11,7 @@ import handlers.server_handler   as serv_h
 import handlers.sql_handler      as sql_h
 import handlers.scraper_handler  as scrape_h
 import datetime
-# import handlers.hardware_handler as hardware_h
+import handlers.hardware_handler as hardware_h
 
 import time
 
@@ -27,8 +27,8 @@ def main():
     webScrapingThread  = scrape_h.CALUWebScraperThread()
     webScrapingThread.daemon = True
     
-    # hardwareHandlerThread = hardware_h.CALUHardwareManagerThread()
-    # hardwareHandlerThread.daemon = True
+    hardwareHandlerThread = hardware_h.CALUHardwareManagerThread()
+    hardwareHandlerThread.daemon = True
 
 
     # Public facing HTTP control.
@@ -39,7 +39,7 @@ def main():
     # run threads
     serverRequestThread.start()
     webScrapingThread.start()
-    # hardwareHandlerThread.start()
+    hardwareHandlerThread.start()
     
     # Keeps main alive (no rogue threads on exit)
     try:

@@ -1,5 +1,6 @@
 SERVER_PORT_ADDRESS = 'localhost'
-SERVER_PORT_NUMBER  = 80
+# SERVER_PORT_ADDRESS = 'http://10.2.90.99'
+SERVER_PORT_NUMBER  = 4400
 
 SERVER_IS_UP        = False
 SCRAPER_UP          = False
