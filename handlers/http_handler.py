@@ -102,9 +102,9 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
 
 
     # Sends a templated http response constructed in do_POST().
-    def do_ANY_send_response(self, code: int, message: str, data: str):
+def do_ANY_send_response(self, code: int, message: str, data: str):
         # Try to update the display with the latest http serve message. 
-        thread_h.update_notifications("[{}] Response: \"{}\", Code: {}.".format(glob.NOTIFICATION_COUNT+1, message, code), code, True)
+        thread_h.update_notifications("[{}] Sent \"{}\", {}.".format(glob.NOTIFICATION_CODE, message, code), code, True)
 
         # Write the server response.
         self.send_response(code, message)
@@ -133,7 +133,7 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
 
         # loads the users request body as a json structure. 
         client_data: dict = json_h.json_load_string(self.http_body_to_string())
-        print(client_data)
+        
         if(glob.SERVER_IS_UP):
             has_requested = False
 
@@ -732,6 +732,7 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
     def do_POST_get_calu_category_events(self, client_data):
         category_events = util_h.get_calu_category_events(client_data["category_id"])
         self.dopost_data = json_h.json_dump_string(category_events)
+        print(self.dopost_data)
         self.set_response_header(200, "OK")
 
 
@@ -751,6 +752,7 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
             # Get user-subscribed categories
             user_subscribed_categories = util_h.get_user_subscribed_categories(user_id)
             self.dopost_data = json_h.json_dump_string(user_subscribed_categories)
+            print(self.dopost_data)
             self.set_response_header(200, "OK")
 
 
@@ -804,7 +806,6 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
     # dummy function for keeping the connection alive.
     def do_POST_keep_alive(self, client_data):
         # Set response header and message
-        print("keep alive called")
         self.set_response_header(200, "OK")
         return
 
