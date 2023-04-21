@@ -70,6 +70,9 @@ class CALUHardwareManagerThread(threading.Thread):
                 if(glob.BUTTON_SUPPRESS):
                     glob.BUTTON_SUPPRESS = False
                 else:
+                    thread_h.update_message_lock.acquire()
+                    glob.NOTIFICATION_FOCUSED_MESSAGE = glob.NOTIFICATION_MESSAGE
+                    thread_h.update_message_lock.release()
                     glob.BUTTON_SUPPRESS = True
                 rasp_io.output(PIN_LED_1, True)
                 sleep(1)
@@ -103,7 +106,9 @@ class CALUHardwareManagerThread(threading.Thread):
             try:
                 while True:
                     if(glob.BUTTON_SUPPRESS):
-                        sleep(1)
+                        long_string(display, glob.NOTIFICATION_FOCUSED_MESSAGE, 2)
+                        sleep(2)
+                        display.lcd_clear()
                     else:
                         display.lcd_display_string("Notifications:", 1)
                         # try to acquire the new global notification string
@@ -112,7 +117,6 @@ class CALUHardwareManagerThread(threading.Thread):
                         thread_h.update_message_lock.release()
                         sleep(2)
                         display.lcd_clear()
-                        sleep(4) # clear, then loop starts again
             except KeyboardInterrupt as e:
                 print(e)
                 display.lcd_clear()	 # clear the display 

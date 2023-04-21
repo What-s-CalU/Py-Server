@@ -13,7 +13,7 @@ def s_print(*a, **b):
 def update_notifications(message: str, code: int, increment: bool):
     update_message_lock.acquire()
     # block messages whenever a fatal error occured.
-    if(glob.NOTIFICATION_CODE < 430):
+    if(glob.NOTIFICATION_CODE < 410):
         glob.NOTIFICATION_MESSAGE = message
         glob.NOTIFICATION_CODE    = code
         if(increment > 0):

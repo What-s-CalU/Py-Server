@@ -51,6 +51,7 @@ class CALUWebScraperThread(threading.Thread):
         scrapee: requests.Session = requests.Session()
 
         finished_init: bool = False
+        scrape_done: bool  = False
         
         last_scraped: float = time.time()
 
@@ -63,6 +64,7 @@ class CALUWebScraperThread(threading.Thread):
         # The thread is always running, which allows us to start glob.SCRAPER_UP up arbitrarily. 
         while True:
             if glob.SCRAPER_UP:
+                scrape_done = False
                 # Fetch events from the database
                 skipped_first = False
                 url = "http://calu.edu/news/announcements/"
@@ -75,7 +77,7 @@ class CALUWebScraperThread(threading.Thread):
                     except requests.exceptions.ReadTimeout:
                         thread_h.s_print("[SCRAPER] [ERROR] <Connection timed out; attempting reconnection.>")
                         continue
-                # requests.post(url=url, headers={'Connection':'close'})
+
 
 
                 if response.status_code == 200:
@@ -88,7 +90,7 @@ class CALUWebScraperThread(threading.Thread):
                     # hardcoded checks for whether or not events equals none.
                     if events != None:
                         for event in events:
-                            if(skipped_first):
+                            if(skipped_first and not(scrape_done)):
                                 i = 0
                                 event_data = event.find_all('td')
 
@@ -110,14 +112,14 @@ class CALUWebScraperThread(threading.Thread):
                                         # description and time start parsing (time end is midnight for all events with a start time)
                                         elif i == 1:
                                             event_name  = data.get_text().strip().encode('ascii',errors='ignore').decode('ascii')
-                                            """                                            thread_h.s_print("[SCRAPER] [EVENT] <Viewing \"{}\".>".format(event_name))
+                                            thread_h.s_print("[SCRAPER] [EVENT] <Viewing \"{}\".>".format(event_name))
                                             if(data) != None:
                                                     finished_body = False
                                                     while(not(finished_body)):
                                                         event_desc = ""
                                                         url_body   = "https://www.calu.edu" + data.find('a')['href']
                                                         try:
-                                                            time.sleep(0.10)
+                                                            time.sleep(6.00)
                                                             data_response        = scrapee.get(url_body, headers=headers, timeout=4.35)
                                                             data_response_parsed = BeautifulSoup(str(data_response.text), 'html.parser')
                                                             data_anchor          = data_response_parsed.find('div', class_='b-band__inner')
@@ -140,7 +142,8 @@ class CALUWebScraperThread(threading.Thread):
                                                                 else:
                                                                     j+=1
                                                             finished_body = True
-                                                # print(event_desc)"""
+                                                # print(event_desc)
+                                                
 
                                         # event sender (maps to categories via a dictionary)
                                         elif i == 2:
@@ -156,7 +159,7 @@ class CALUWebScraperThread(threading.Thread):
                                             thread_h.s_print("[SCRAPER] [ERROR] <Unexpected values in <tr> body.>")
                                         i += 1
                                 
-                                    http_util_h.insert_new_calu_event(str(event_start.isoformat()) + ".000", str(event_end.isoformat()) + ".000", event_name, event_desc, category_id, False, None, 0, events_updated)
+                                    scrape_done = http_util_h.insert_new_calu_event(str(event_start.isoformat()) + ".000", str(event_end.isoformat()) + ".000", event_name, event_desc, category_id, False, None, 0, events_updated)
                                     # send an http update??? The client could just do this via a refresh button and automatic refreshing; I'm not sure if http allows us to just 
                                     # send data like that without a thread constantly listening like this server does on every client.
                             else:

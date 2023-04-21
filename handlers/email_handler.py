@@ -34,22 +34,3 @@ def send_email(to: str, subject: str, body: str):
         with smtplib.SMTP_SSL(EMAIL_SMTP, EMAIL_PORT_NUMBER, context=EMAIL_CONTEXT) as server:
             server.login(EMAIL_ACCOUNT, EMAIL_PASSWORD)
             server.sendmail(EMAIL_ACCOUNT, to, mail.as_string())
-
-
-
-# The program that works on sending emails to potential accounts. We will not check to see if they're sent successfully. 
-class CALUEmailhandlerThread(threading.Thread):
-    def run(self):
-        hasRan = False
-        body            = "This is a test message from What's@Calu."
-        mail            = EmailMessage()
-        mail['From']    = EMAIL_ACCOUNT
-        mail['To']      = "scottatrunzo@gmail.com"
-        mail['Subject'] = "Test Email from What's@Calu"
-        mail.set_content(body)
-
-        if(not(hasRan)):
-            with smtplib.SMTP_SSL(EMAIL_SMTP, EMAIL_PORT_NUMBER, context=EMAIL_CONTEXT) as server:
-                server.login(EMAIL_ACCOUNT, EMAIL_PASSWORD)
-                server.sendmail(EMAIL_ACCOUNT, "scottatrunzo@gmail.com", mail.as_string())
-            hasRan = True
