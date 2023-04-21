@@ -12,7 +12,9 @@ import global_values              as     glob
 from   handlers.email_handler     import send_email
 import handlers.threading_handler as thread_h
 import time
-import random, string
+import random
+import string
+import datetime
 #
 # Utility functions used by the parse handler that are -technically- agnostic of the handler.
 #
@@ -102,7 +104,7 @@ class ParsingHandler(http.server.BaseHTTPRequestHandler):
     # Sends a templated http response constructed in do_POST().
     def do_ANY_send_response(self, code: int, message: str, data: str):
         # Try to update the display with the latest http serve message. 
-        thread_h.update_notifications("Served HTTP Response: \"{}\", Code: {}.".format(message, code), code, True)
+        thread_h.update_notifications("[{}] Response: \"{}\", Code: {}.".format(glob.NOTIFICATION_COUNT+1, message, code), code, True)
 
         # Write the server response. 
         self.send_response(code, message)

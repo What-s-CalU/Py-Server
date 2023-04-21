@@ -1,6 +1,6 @@
 '''
 | ACSC/ACET - 492 - 001 - What's@Calu - Server Side Code (main.py)
-| Edited on February 26th, 2023.
+| Edited on April 20th, 2023.
 '''
 
 
@@ -10,6 +10,7 @@ import global_values            as glob
 import handlers.server_handler   as serv_h
 import handlers.sql_handler      as sql_h
 import handlers.scraper_handler  as scrape_h
+import datetime
 # import handlers.hardware_handler as hardware_h
 
 import time
@@ -32,7 +33,7 @@ def main():
 
     # Public facing HTTP control.
     #* this can be set to False to deny service while the server is updating. 
-    glob.SERVER_IS_UP = True
+    # glob.SERVER_IS_UP = True
     glob.SCRAPER_UP   = True
 
     # run threads
@@ -43,7 +44,7 @@ def main():
     # Keeps main alive (no rogue threads on exit)
     try:
         while True:
-            # loop through the databases for logged in users, reset passwords, etc. This function deletes expired entries. 
+            # loop through the databases for logged in users, reset passwords, etc. This function deletes expired entries.
             manage_tokens()
             time.sleep(1)
     except KeyboardInterrupt:
@@ -74,7 +75,7 @@ def manage_tokens():
                 LOGIN.TIME as time,
                 LOGIN.ID   as id
                 FROM LOGIN""",
-            "DELETE FROM LOGIN WHERE NAME IS ? AND TIME IS ? AND ID IS ?",80)
+            "DELETE FROM LOGIN WHERE NAME IS ? AND TIME IS ? AND ID IS ?", 80)
 
 
 def manage_timesheet(get_query:str, delete_query:str, timeout:int=240):
