@@ -51,8 +51,10 @@ class CALUWebScraperThread(threading.Thread):
         scrapee: requests.Session = requests.Session()
 
         finished_init: bool = False
-        scrape_done: bool  = False
-        
+        scrape_done: bool   = False
+        do_not_fill: bool   = False
+        was_updated: bool   = False
+        data_anchor = None
         last_scraped: float = time.time()
 
         events_updated = []
@@ -111,38 +113,61 @@ class CALUWebScraperThread(threading.Thread):
 
                                         # description and time start parsing (time end is midnight for all events with a start time)
                                         elif i == 1:
+                                            was_updated = False
                                             event_name  = data.get_text().strip().encode('ascii',errors='ignore').decode('ascii')
                                             thread_h.s_print("[SCRAPER] [EVENT] <Viewing \"{}\".>".format(event_name))
-                                            if(data) != None:
-                                                    finished_body = False
-                                                    while(not(finished_body)):
-                                                        event_desc = ""
-                                                        url_body   = "https://www.calu.edu" + data.find('a')['href']
-                                                        try:
-                                                            time.sleep(6.00)
-                                                            data_response        = scrapee.get(url_body, headers=headers, timeout=4.35)
-                                                            data_response_parsed = BeautifulSoup(str(data_response.text), 'html.parser')
-                                                            data_anchor          = data_response_parsed.find('div', class_='b-band__inner')
-                                                        except requests.exceptions.ReadTimeout:
-                                                            thread_h.s_print("[SCRAPER] [ERROR] <Connection timed out; attempting reconnection.>")
-                                                            scrapee.post(url=url, headers={'Connection':'close'})
-                                                            continue
+
+                                            for event_title in events_updated:
+                                                if(str(event_title) == event_name):
+                                                    was_updated = True
+
+                                            # Don't try to sent an http request for an event we already updated. 
+                                            if(not(was_updated)):
+
+                                                # Don't try to evaluate a regex we know is null
+                                                if(data) != None:
                                                         
-                                                        
-                                                        if(data_anchor == None):
-                                                            finished_body = False
-                                                        else:
-                                                            data_body            = data_anchor.get_text().split('\n')
-                                                            j = 0
-                                                            for data_line in data_body:
-                                                                if(j >= 5):
-                                                                        # date_parsed = dateparser.parse(data_line)
-                                                                        # print(date_parsed)
-                                                                        event_desc = event_desc + data_line.encode('ascii',errors='ignore').decode('ascii') + "\n"
-                                                                else:
-                                                                    j+=1
-                                                            finished_body = True
-                                                # print(event_desc)
+                                                        # Setup loop controls for the description grabber. 
+                                                        finished_body = False
+                                                        do_not_fill = False
+                                                        data_anchor = None
+
+                                                        # Loop so long as we've not gotten a description.
+                                                        while(not(finished_body)):
+                                                            event_desc = ""
+                                                            url_body   = "https://www.calu.edu" + data.find('a')['href']
+                                                            try:
+                                                                time.sleep(6.00)
+                                                                data_response        = scrapee.get(url_body, headers=headers, timeout=4.35)
+                                                                data_response_parsed = BeautifulSoup(str(data_response.text), 'html.parser')
+                                                                data_anchor          = data_response_parsed.find('div', class_='b-band__inner')
+                                                            
+                                                            # Bail whenever the connection times out to keep the announcements page happy
+                                                            except requests.exceptions.ReadTimeout:
+                                                                thread_h.s_print("[SCRAPER] [ERROR] <Connection timed out; skipping description.>")
+                                                                finished_body = True
+                                                                do_not_fill = True
+                                                            
+                                                            # Loop if we didn't run into the data_anchor and the server would be fine with reconnection.
+                                                            if(data_anchor == None and not(do_not_fill)):
+                                                                finished_body = False
+                                                            
+                                                            # Evaluate the description. 
+                                                            else:
+                                                                data_body            = data_anchor.get_text().split('\n')
+                                                                j = 0
+                                                                for data_line in data_body:
+                                                                    if(j >= 5):
+                                                                            # date_parsed = dateparser.parse(data_line)
+                                                                            # print(date_parsed)
+                                                                            event_desc = event_desc + data_line.encode('ascii',errors='ignore').decode('ascii') + "\n"
+                                                                    else:
+                                                                        j+=1
+                                                                finished_body = True
+
+                                            # Dummy out the description, as we don't need it. 
+                                            else:
+                                                event_desc = ""
                                                 
 
                                         # event sender (maps to categories via a dictionary)
@@ -159,7 +184,7 @@ class CALUWebScraperThread(threading.Thread):
                                             thread_h.s_print("[SCRAPER] [ERROR] <Unexpected values in <tr> body.>")
                                         i += 1
                                 
-                                    scrape_done = http_util_h.insert_new_calu_event(str(event_start.isoformat()) + ".000", str(event_end.isoformat()) + ".000", event_name, event_desc, category_id, False, None, 0, events_updated)
+                                    scrape_done = http_util_h.insert_new_calu_event(str(event_start.isoformat()) + ".000", str(event_end.isoformat()) + ".000", event_name, event_desc, category_id, False, None, 0, events_updated, do_not_fill)
                                     # send an http update??? The client could just do this via a refresh button and automatic refreshing; I'm not sure if http allows us to just 
                                     # send data like that without a thread constantly listening like this server does on every client.
                             else:

@@ -1,6 +1,6 @@
 '''
 | ACSC/ACET - 492 - 001 - What's@Calu - Server Side Code (main.py)
-| Edited on April 20th, 2023.
+| Edited on April 23nd, 2023.
 '''
 
 
@@ -101,6 +101,8 @@ def manage_timesheet(get_query:str, delete_query:str, timeout:int=240):
                     delete_query,
                     (table_name, table_time, table_id))
                 current = userdata_query_signup.fetchone()
+
+
 
 # autoruns main. 
 if __name__ == "__main__":
