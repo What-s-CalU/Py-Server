@@ -86,6 +86,7 @@ class CALUHardwareManagerThread(threading.Thread):
                 display.lcd_clear()
                 display.lcd_display_string("clearing ...", 1) 
                 display.lcd_display_string("screen   ...", 2)
+                display.lcd_clear()
                 thread_h.update_notifications("No new notifications...", 200, True)
                 sleep(2)
                 display.lcd_clear()
@@ -102,7 +103,7 @@ class CALUHardwareManagerThread(threading.Thread):
             #######################################################################
             
             display.lcd_display_string("What's @ CALU!", 1)  # Write line of text to first line of display
-            sleep(2)
+            sleep(3)
             try:
                 while True:
                     if(glob.BUTTON_SUPPRESS):
