@@ -24,6 +24,7 @@ PIN_LED_2: int = 22
 # (driver, string to print, number of line to print, number of columns of your display) 
 #Return: This function send to display your scrolling string.
 def long_string(display, text="", num_line=1, num_cols=16):
+    try:
         if len(text) > num_cols:
             display.lcd_display_string(text[:num_cols], num_line)
             sleep(1)
@@ -34,6 +35,9 @@ def long_string(display, text="", num_line=1, num_cols=16):
             sleep(1)
         else:
             display.lcd_display_string(text, num_line)
+        except Exception as e:
+            print("Error in long_string():", e)
+            pass  # Pass and do nothing if there is an error
 
 
 # Hardware's tasks as a thread, intended to run forever. 
