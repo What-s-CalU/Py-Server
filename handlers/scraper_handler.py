@@ -58,9 +58,11 @@ class CALUWebScraperThread(threading.Thread):
         last_scraped: float = time.time()
 
         events_updated = []
+        thread_h.s_print("[SCRAPER] <Starting Webscraping Process...>")
+        """
         thread_h.s_print("[SCRAPER] <Current Webscraping Nametable>:")
         for value in glob.SCRAPER_CATEGORY_FIELDS:
-            thread_h.s_print(("[SCRAPER] <{}>".format(value)))
+            thread_h.s_print(("[SCRAPER] [CATEGORY] <{}>".format(value)))"""
 
         # Runs while the scraper is up.
         # The thread is always running, which allows us to start glob.SCRAPER_UP up arbitrarily. 

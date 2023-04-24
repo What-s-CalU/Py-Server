@@ -35,9 +35,9 @@ def long_string(display, text="", num_line=1, num_cols=16):
             sleep(1)
         else:
             display.lcd_display_string(text, num_line)
-        except Exception as e:
-            print("Error in long_string():", e)
-            pass  # Pass and do nothing if there is an error
+    except Exception as e:
+        print("Error in long_string():", e)
+        pass  # Pass and do nothing if there is an error
 
 
 # Hardware's tasks as a thread, intended to run forever. 
